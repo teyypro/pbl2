@@ -1,0 +1,554 @@
+// ============================================
+// BẢNG NGƯỜI DÙNG & PHÂN QUYỀN
+// ============================================
+
+Table users {
+  id integer [pk, increment]
+  username varchar(50) [unique, not null]
+  password_hash varchar(255) [not null]
+  full_name varchar(100) [not null]
+  email varchar(100) [unique]
+  phone varchar(20)
+  role enum('admin', 'receptionist', 'doctor', 'patient') [not null]
+  status enum('active', 'locked', 'pending') [default: 'pending']
+  last_login timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - Khi status = locked → tự động set doctor/patient tương ứng thành inactive (nếu có).
+  - role = patient bắt buộc đi kèm với bản ghi patients.
+  '''
+}
+
+Table doctors {
+  id integer [pk, increment]
+  user_id integer [unique, not null]
+  department_id integer [not null]
+  specialty varchar(100)
+  dob date
+  salary decimal(15,2)
+  years_experience integer
+  qualification varchar(200)
+  accept_appointments boolean [default: true]
+  accept_walkin boolean [default: true]
+  max_appointments_per_day integer [default: 10]
+  max_walkin_per_day integer [default: 15]
+  can_respond_feedback boolean [default: false]
+  status enum('active', 'inactive', 'on_leave') [default: 'active']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - accept_appointments / accept_walkin dùng để lọc khi patient/receptionist đặt lịch hoặc lấy số.
+  - max_* chỉ là giá trị mặc định; giới hạn thực tế theo ngày nằm ở walkin_doctor_daily_limits và appointment_slots.
+  - can_respond_feedback: cờ do admin bật/tắt, quyết định doctor có được tự trả lời đánh giá của bệnh nhân hay không (nếu false, chỉ admin được phản hồi).
+  '''
+}
+
+Table patients {
+  id integer [pk, increment]
+  user_id integer [unique, not null]
+  patient_code varchar(20) [unique, not null]
+  full_name varchar(100) [not null]
+  dob date [not null]
+  gender enum('male', 'female', 'other')
+  phone varchar(20)
+  email varchar(100)
+  address text
+  bhyt_code varchar(20)
+  bhyt_expiry date
+  medical_history text
+  allergies text
+  blood_type varchar(5)
+  emergency_contact varchar(100)
+  emergency_phone varchar(20)
+  status enum('active', 'inactive') [default: 'active']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - user_id bắt buộc (không còn guest).
+  - Khi tạo patient phải đồng thời tạo user với role = patient.
+  '''
+}
+
+// ============================================
+// TỔ CHỨC & DANH MỤC
+// ============================================
+
+Table departments {
+  id integer [pk, increment]
+  code varchar(20) [unique, not null]
+  name varchar(100) [not null]
+  description text
+  floor_location varchar(50)
+  head_doctor_id integer
+  status enum('active', 'inactive') [default: 'active']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - head_doctor_id phải là bác sĩ có doctors.department_id = departments.id của chính khoa này.
+    Ràng buộc này không thể enforce bằng FK/CHECK thông thường (tham chiếu chéo 2 bảng) → validate ở application layer khi gán/đổi trưởng khoa.
+  '''
+}
+
+Table services {
+  id integer [pk, increment]
+  code varchar(20) [unique, not null]
+  name varchar(200) [not null]
+  description text
+  price decimal(15,2) [not null]
+  unit varchar(20)
+  category varchar(50)
+  department_id integer [not null]
+  status enum('active', 'inactive') [default: 'active']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table medicines {
+  id integer [pk, increment]
+  code varchar(20) [unique, not null]
+  name varchar(200) [not null]
+  active_ingredient varchar(200)
+  unit varchar(20) [not null]
+  price decimal(15,2) [not null]
+  stock_quantity integer [default: 0]
+  min_stock integer [default: 10]
+  expiry_date date
+  batch_number varchar(50)
+  manufacturer varchar(100)
+  requires_prescription boolean [default: true]
+  status enum('available', 'out_of_stock', 'discontinued') [default: 'available']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// ============================================
+// ÁNH XẠ BÁC SĨ - DỊCH VỤ
+// ============================================
+
+Table doctor_services {
+  id integer [pk, increment]
+  doctor_id integer [not null]
+  service_id integer [not null]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '1 bác sĩ - 1 dịch vụ chỉ được có 1 bản ghi (unique index).'
+}
+
+// ============================================
+// ĐẶT LỊCH HẸN (APPOINTMENT)
+// ============================================
+
+Table doctor_appointment_schedules {
+  id integer [pk, increment]
+  doctor_id integer [not null]
+  weekday integer [not null] // 1-7 (Monday-Sunday)
+  start_time time [not null]
+  end_time time [not null]
+  slot_duration_minutes integer [default: 20]
+  max_patients integer
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table appointment_slots {
+  id integer [pk, increment]
+  doctor_id integer [not null]
+  slot_date date [not null]
+  slot_time time [not null]
+  slot_duration_minutes integer [default: 20]
+  appointment_id integer // null nếu còn trống
+  patient_id integer // null nếu còn trống
+  status enum('available', 'booked', 'completed', 'missed', 'cancelled') [default: 'available']
+  note text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - 1 bác sĩ không được có 2 slot trùng (doctor_id + slot_date + slot_time).
+  - Khi book: status = booked, set appointment_id + patient_id.
+  - Khi cancel/missed: status tương ứng + clear appointment_id + patient_id.
+  - Khi completed: status = completed.
+  '''
+}
+
+Table appointments {
+  id integer [pk, increment]
+  appointment_code varchar(30) [unique, not null]
+  patient_id integer [not null]
+  doctor_id integer [not null]
+  department_id integer [not null]
+  service_id integer [not null]
+  slot_id integer [unique, not null]
+  scheduled_at timestamp [not null]
+  status enum('pending', 'confirmed', 'booked', 'completed', 'cancelled', 'missed') [default: 'pending']
+  cancel_reason text
+  cancelled_by integer
+  created_by integer [not null]
+  note text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - slot_id unique → 1 slot chỉ thuộc 1 appointment.
+  - Khi đổi status phải đồng bộ ngược lại appointment_slots.
+  '''
+}
+
+// ============================================
+// KHÁM TẠI CHỖ (WALK-IN / TICKET)
+// ============================================
+
+Table walkin_queues {
+  id integer [pk, increment]
+  ticket_code varchar(30) [unique, not null]
+  patient_id integer [not null]
+  department_id integer [not null]
+  service_id integer [not null]
+  doctor_id integer // bác sĩ ưu tiên lúc tạo vé (có thể null)
+  priority enum('normal', 'priority', 'emergency') [default: 'normal']
+  status enum('waiting', 'assigned', 'examining', 'completed', 'missed', 'cancelled') [default: 'waiting']
+  queue_number integer
+  check_in_time timestamp [default: `now()`]
+  assigned_at timestamp
+  assigned_doctor_id integer // bác sĩ thực sự được gán
+  called_at timestamp
+  examination_started_at timestamp
+  examination_completed_at timestamp
+  estimated_wait_minutes integer
+  created_by integer
+  note text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - doctor_id: bác sĩ ưu tiên lúc tạo.
+  - assigned_doctor_id: bác sĩ thực sự khám (được gán bởi receptionist hoặc hệ thống).
+  - 1 bệnh nhân không được có 2 vé đang ở trạng thái waiting/assigned/examining cùng 1 khoa.
+  '''
+}
+
+Table walkin_doctor_daily_limits {
+  id integer [pk, increment]
+  doctor_id integer [not null]
+  work_date date [not null]
+  max_walkin integer [not null]
+  current_count integer [default: 0]
+  is_available boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - 1 bác sĩ chỉ có 1 bản ghi limit cho 1 ngày.
+  - Khi tạo vé thành công → tăng current_count.
+  - Khi cancel/missed trước examining → giảm current_count.
+  - current_count >= max_walkin → is_available = false.
+  - Rủi ro race condition: 2 request tạo vé cùng lúc có thể cùng đọc current_count < max_walkin trước khi commit
+    → cần đọc + tăng current_count trong 1 transaction có khóa dòng (SELECT ... FOR UPDATE) hoặc UPDATE ... WHERE current_count < max_walkin
+    để đảm bảo không vượt hạn mức khi có nhiều receptionist/thao tác đồng thời.
+  '''
+}
+
+// ============================================
+// KHÁM BỆNH (CHUNG)
+// ============================================
+
+Table medical_records {
+  id integer [pk, increment]
+  record_code varchar(30) [unique, not null]
+  patient_id integer [not null]
+  doctor_id integer [not null]
+  source_type enum('appointment', 'walkin') [not null]
+  source_id integer [not null]
+  visit_date timestamp [default: `now()`]
+  symptoms text [not null]
+  clinical_findings text
+  diagnosis text [not null]
+  diagnosis_code varchar(20)
+  advice text
+  follow_up_date date
+  height decimal(5,2)
+  weight decimal(5,2)
+  blood_pressure varchar(20)
+  temperature decimal(4,1)
+  status enum('draft', 'finalized', 'completed') [default: 'draft']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - Unique (source_type, source_id) → 1 nguồn chỉ có 1 phiếu khám.
+  - Chỉ được tạo khi source đang ở examining hoặc completed.
+  - Sau finalized chỉ admin được sửa.
+  - source_id là khóa đa hình (trỏ tới appointments.id nếu source_type='appointment', hoặc walkin_queues.id nếu source_type='walkin').
+    Không thể khai báo FK thật cho cột này (bảng đích thay đổi theo source_type) → phải validate tính hợp lệ ở application layer,
+    hoặc cân nhắc tách 2 cột nullable (appointment_id, walkin_id) + CHECK đúng 1 cột khác NULL nếu muốn ràng buộc ở tầng DB.
+  '''
+}
+
+Table prescriptions {
+  id integer [pk, increment]
+  prescription_code varchar(30) [unique, not null]
+  medical_record_id integer [not null]
+  patient_id integer [not null]
+  doctor_id integer [not null]
+  prescribed_at timestamp [default: `now()`]
+  note text
+  status enum('pending', 'dispensed', 'completed', 'cancelled') [default: 'pending']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table prescription_details {
+  id integer [pk, increment]
+  prescription_id integer [not null]
+  medicine_id integer [not null]
+  dosage varchar(50) [not null]
+  quantity integer [not null]
+  days integer [not null]
+  frequency varchar(50) [not null]
+  route enum('oral', 'injection', 'topical', 'inhaled', 'other') [default: 'oral']
+  morning boolean [default: false]
+  noon boolean [default: false]
+  evening boolean [default: false]
+  night boolean [default: false]
+  note text
+  status enum('active', 'dispensed', 'cancelled') [default: 'active']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table examination_services {
+  id integer [pk, increment]
+  medical_record_id integer [not null]
+  service_id integer [not null]
+  doctor_id integer [not null]
+  quantity integer [default: 1]
+  unit_price decimal(15,2) [not null]
+  discount decimal(15,2) [default: 0]
+  discount_type enum('percent', 'fixed') [default: 'percent']
+  status enum('pending', 'performed', 'cancelled') [default: 'pending']
+  performed_by integer
+  performed_at timestamp
+  note text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// ============================================
+// THANH TOÁN
+// ============================================
+
+Table invoices {
+  id integer [pk, increment]
+  invoice_code varchar(30) [unique, not null]
+  patient_id integer [not null]
+  medical_record_id integer
+  prescription_id integer
+  total_amount decimal(15,2) [not null]
+  bhyt_discount decimal(15,2) [default: 0]
+  other_discount decimal(15,2) [default: 0]
+  patient_pay decimal(15,2) [not null]
+  paid_amount decimal(15,2) [default: 0]
+  payment_method enum('cash', 'card', 'bank_transfer', 'insurance', 'other')
+  payment_status enum('pending', 'paid', 'partial', 'refunded', 'cancelled') [default: 'pending']
+  invoice_date timestamp [default: `now()`]
+  paid_at timestamp
+  created_by integer [not null]
+  note text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '''
+  - Nên tạo từ examination + prescription đã completed.
+  - patient_pay = total_amount - bhyt_discount - other_discount.
+  - partial: paid_amount < patient_pay.
+  '''
+}
+
+Table invoice_items {
+  id integer [pk, increment]
+  invoice_id integer [not null]
+  item_type enum('service', 'medicine') [not null]
+  item_id integer [not null]
+  item_name varchar(200) [not null]
+  quantity integer [not null]
+  unit_price decimal(15,2) [not null]
+  discount decimal(15,2) [default: 0]
+  amount decimal(15,2) [not null]
+  note text
+  created_at timestamp [default: `now()`]
+
+  Note: '''
+  - item_id là khóa đa hình (trỏ tới services.id nếu item_type='service', hoặc medicines.id nếu item_type='medicine').
+    Không enforce được bằng FK thật → validate item_id tồn tại đúng bảng tương ứng ở application layer khi tạo hóa đơn.
+  - item_name/unit_price được sao chép (snapshot) tại thời điểm lập hóa đơn, không tự đồng bộ nếu services/medicines đổi giá sau đó — đây là chủ đích để giữ lịch sử hóa đơn chính xác.
+  '''
+}
+
+// ============================================
+// ĐÁNH GIÁ & PHẢN HỒI
+// ============================================
+
+Table feedbacks {
+  id integer [pk, increment]
+  patient_id integer [not null]
+  doctor_id integer [not null]
+  medical_record_id integer [not null]
+  rating integer [not null] // 1-5
+  comment text
+  response text
+  response_by integer
+  responded_at timestamp
+  status enum('pending', 'responded', 'hidden') [default: 'pending']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: '1 examination chỉ được 1 feedback.'
+}
+
+// ============================================
+// LOG & HỆ THỐNG
+// ============================================
+
+Table system_configs {
+  id integer [pk, increment]
+  config_key varchar(50) [unique, not null]
+  config_value text [not null]
+  data_type enum('string', 'number', 'boolean', 'json') [default: 'string']
+  description text
+  is_editable boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table activity_logs {
+  id integer [pk, increment]
+  user_id integer
+  action varchar(100) [not null]
+  table_name varchar(50)
+  record_id integer
+  old_data json
+  new_data json
+  ip varchar(45)
+  user_agent text
+  created_at timestamp [default: `now()`]
+}
+
+// ============================================
+// RÀNG BUỘC KHÓA NGOẠI
+// ============================================
+
+// Users & Doctors
+Ref: users.id < doctors.user_id
+Ref: departments.id < doctors.department_id
+
+// Departments
+Ref: doctors.id < departments.head_doctor_id
+
+// Services
+Ref: departments.id < services.department_id
+
+// Doctor Services
+Ref: doctors.id < doctor_services.doctor_id
+Ref: services.id < doctor_services.service_id
+
+// Appointments & slots
+Ref: doctors.id < doctor_appointment_schedules.doctor_id
+Ref: doctors.id < appointment_slots.doctor_id
+Ref: patients.id < appointment_slots.patient_id
+Ref: appointments.id < appointment_slots.appointment_id
+
+Ref: patients.id < appointments.patient_id
+Ref: doctors.id < appointments.doctor_id
+Ref: departments.id < appointments.department_id
+Ref: services.id < appointments.service_id
+Ref: appointment_slots.id < appointments.slot_id
+Ref: users.id < appointments.created_by
+Ref: users.id < appointments.cancelled_by
+
+// Walk-in
+Ref: patients.id < walkin_queues.patient_id
+Ref: departments.id < walkin_queues.department_id
+Ref: services.id < walkin_queues.service_id
+Ref: doctors.id < walkin_queues.doctor_id
+Ref: doctors.id < walkin_queues.assigned_doctor_id
+Ref: users.id < walkin_queues.created_by
+
+Ref: doctors.id < walkin_doctor_daily_limits.doctor_id
+
+// Medical Records
+Ref: patients.id < medical_records.patient_id
+Ref: doctors.id < medical_records.doctor_id
+
+// Prescriptions
+Ref: medical_records.id < prescriptions.medical_record_id
+Ref: patients.id < prescriptions.patient_id
+Ref: doctors.id < prescriptions.doctor_id
+
+Ref: prescriptions.id < prescription_details.prescription_id
+Ref: medicines.id < prescription_details.medicine_id
+
+// Examination Services
+Ref: medical_records.id < examination_services.medical_record_id
+Ref: services.id < examination_services.service_id
+Ref: doctors.id < examination_services.doctor_id
+Ref: doctors.id < examination_services.performed_by
+
+// Invoices
+Ref: patients.id < invoices.patient_id
+Ref: medical_records.id < invoices.medical_record_id
+Ref: prescriptions.id < invoices.prescription_id
+Ref: users.id < invoices.created_by
+
+Ref: invoices.id < invoice_items.invoice_id
+
+// Feedback
+Ref: patients.id < feedbacks.patient_id
+Ref: doctors.id < feedbacks.doctor_id
+Ref: medical_records.id < feedbacks.medical_record_id
+Ref: users.id < feedbacks.response_by
+
+// Log
+Ref: users.id < activity_logs.user_id
+
+// ============================================
+// RÀNG BUỘC UNIQUE & INDEX (BẮT BUỘC)
+// ============================================
+
+// 1 slot chỉ thuộc 1 appointment
+// CREATE UNIQUE INDEX idx_appointment_slot ON appointment_slots(appointment_id) WHERE appointment_id IS NOT NULL;
+
+// 1 bác sĩ không có 2 slot trùng ngày giờ
+// CREATE UNIQUE INDEX idx_doctor_slot_unique ON appointment_slots(doctor_id, slot_date, slot_time);
+
+// 1 bệnh nhân không có 2 vé đang chờ/đang khám cùng 1 khoa
+// CREATE UNIQUE INDEX idx_patient_waiting_walkin ON walkin_queues(patient_id, department_id, status) WHERE status IN ('waiting', 'assigned', 'examining');
+
+// 1 bác sĩ - 1 dịch vụ chỉ 1 record
+// CREATE UNIQUE INDEX idx_doctor_service ON doctor_services(doctor_id, service_id);
+
+// 1 nguồn (appointment/walkin) chỉ có 1 phiếu khám
+// CREATE UNIQUE INDEX idx_medical_record_source ON medical_records(source_type, source_id);
+
+// 1 bác sĩ chỉ có 1 limit cho 1 ngày
+// CREATE UNIQUE INDEX idx_doctor_daily_limit ON walkin_doctor_daily_limits(doctor_id, work_date);
+
+// 1 examination chỉ có 1 feedback
+// CREATE UNIQUE INDEX idx_feedback_examination ON feedbacks(medical_record_id);
+
+// Index performance
+// CREATE INDEX idx_service_department ON services(department_id);
+// CREATE INDEX idx_appointment_service ON appointments(service_id);
+// CREATE INDEX idx_walkin_service ON walkin_queues(service_id);
+// CREATE INDEX idx_walkin_doctor_status ON walkin_queues(doctor_id, status);
+// CREATE INDEX idx_appointments_doctor_date ON appointments(doctor_id, scheduled_at);
+// CREATE INDEX idx_walkin_queues_status ON walkin_queues(status, department_id);
+// CREATE INDEX idx_medical_records_patient ON medical_records(patient_id);
+// CREATE INDEX idx_invoices_patient ON invoices(patient_id);
