@@ -1,0 +1,1 @@
+id|prescription_id|medicine_id|dosage|quantity|days|frequency|route|morning|noon|evening|night|note|status

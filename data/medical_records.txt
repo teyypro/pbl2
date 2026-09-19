@@ -1,0 +1,1 @@
+id|record_code|patient_id|doctor_id|appointment_id|visit_date|symptoms|clinical_findings|diagnosis|diagnosis_code|advice|follow_up_date|height|weight|blood_pressure|temperature|status

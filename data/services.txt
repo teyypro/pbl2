@@ -1,0 +1,5 @@
+id|code|name|description|price|unit|category|department_id|status
+1|DV001|Kham tong quat|Kham suc khoe tong quat|200000|Lan|Kham benh|2|active
+2|DV002|Kham da lieu|Kham chuyen khoa da lieu|250000|Lan|Kham benh|1|active
+3|DV003|Nho rang|Nho rang thuong|500000|Lan|Thu thuat|3|active
+4|DV004|Sieu am bung|Sieu am o bung|300000|Lan|Can lam sang|2|active

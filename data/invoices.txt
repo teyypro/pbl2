@@ -1,0 +1,1 @@
+id|invoice_code|patient_id|medical_record_id|prescription_id|total_amount|bhyt_discount|other_discount|patient_pay|paid_amount|payment_method|payment_status|invoice_date|created_by|note

@@ -1,0 +1,1 @@
+id|appointment_code|patient_id|doctor_id|department_id|service_id|scheduled_at|status|cancel_reason|created_by|note

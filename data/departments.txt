@@ -1,0 +1,4 @@
+id|code|name|description|floor_location|head_doctor_id|status
+1|KDA|Khoa Da Lieu|Chuyen khoa da lieu|Tang 2|0|active
+2|KNO|Khoa Noi|Khoa noi tong hop|Tang 3|0|active
+3|KRH|Khoa Rang Ham Mat|Khoa rang ham mat|Tang 4|0|active

@@ -1,0 +1,4 @@
+id|user_id|patient_code|full_name|dob|gender|phone|email|address|bhyt_code|medical_history|allergies|blood_type|status
+1|6|BN001|Nguyen Van Dat|1995-01-20|male|0944444444|dat@email.com|123 Tran Phu, Da Nang||||O+|active
+2|7|BN002|Tran Thi Em|1998-07-15|female|0955555555|em@email.com|456 Le Loi, Da Nang||||A+|active
+3|8|BN260912141|Tey|2007 01 01|male|0123456789|kjbdas@gmail.com|trai dat|||||active

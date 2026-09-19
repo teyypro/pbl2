@@ -1,0 +1,6 @@
+id|code|name|active_ingredient|unit|price|stock_quantity|min_stock|expiry_date|manufacturer|requires_prescription|status
+1|TH001|Paracetamol 500mg|Paracetamol|Vien|2000|1000|10|2027-12-31|Hau Giang Pharma|1|available
+2|TH002|Amoxicillin 500mg|Amoxicillin|Vien|5000|500|10|2027-06-30|Domesco|1|available
+3|TH003|Omeprazol 20mg|Omeprazole|Vien|3000|800|10|2027-09-15|Pymepharco|1|available
+4|TH004|Vitamin C 1000mg|Acid Ascorbic|Vien|1500|2000|10|2028-01-01|DHG Pharma|0|available
+5|TH005|Cetirizine 10mg|Cetirizine|Vien|2500|600|10|2027-11-30|Stada|1|available

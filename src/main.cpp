@@ -1,39 +1,58 @@
 #include <iostream>
 #include <string>
 
+#include "controllers/AuthController.h"
+#include "controllers/AdminController.h"
+#include "controllers/DoctorController.h"
+#include "controllers/ReceptionistController.h"
+#include "controllers/PatientController.h"
+#include "utils/Helpers.h"
+
 using namespace std;
 
 // =============================================
 // HÀM HIỂN THỊ MENU CHÍNH
 // =============================================
-// Đây là điểm bắt đầu của chương trình.
-// Người dùng sẽ thấy menu này đầu tiên khi chạy app.
-// Sau khi đăng nhập, menu sẽ thay đổi tùy theo role (admin/doctor/patient/receptionist).
 
 void showMainMenu() {
-    cout << "========================================" << endl;
-    cout << "   HE THONG QUAN LY PHONG KHAM" << endl;
-    cout << "========================================" << endl;
+    Helpers::printTitle("HE THONG QUAN LY PHONG KHAM");
     cout << "1. Dang nhap" << endl;
     cout << "2. Dang ky (Benh nhan)" << endl;
     cout << "0. Thoat" << endl;
-    cout << "========================================" << endl;
-    cout << "Chon: ";
+    Helpers::printLine();
 }
 
 int main() {
+    AuthController authCtrl;
     int choice;
 
     while (true) {
         showMainMenu();
-        cin >> choice;
+        choice = Helpers::getInputInt("Chon: ");
 
         switch (choice) {
-            case 1:
-                cout << "[TODO] Chuc nang dang nhap - se lam o Giai doan 1" << endl;
+            case 1: {
+                User user = authCtrl.showLogin();
+                if (user.id > 0) {
+                    // Dieu huong theo role
+                    if (user.role == "admin") {
+                        AdminController adminCtrl;
+                        adminCtrl.showMenu();
+                    } else if (user.role == "doctor") {
+                        DoctorController doctorCtrl(user);
+                        doctorCtrl.showMenu();
+                    } else if (user.role == "receptionist") {
+                        ReceptionistController recepCtrl(user);
+                        recepCtrl.showMenu();
+                    } else if (user.role == "patient") {
+                        PatientController patientCtrl(user);
+                        patientCtrl.showMenu();
+                    }
+                }
                 break;
+            }
             case 2:
-                cout << "[TODO] Chuc nang dang ky - se lam o Giai doan 1" << endl;
+                authCtrl.showRegister();
                 break;
             case 0:
                 cout << "Tam biet!" << endl;

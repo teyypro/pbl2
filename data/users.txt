@@ -1,0 +1,9 @@
+id|username|password_hash|full_name|email|phone|role|status
+1|admin|admin123|Quan Tri Vien|admin@clinic.com|0900000000|admin|active
+2|letan01|letan123|Nguyen Thi Le Tan|letan@clinic.com|0900000001|receptionist|active
+3|bacsi01|bacsi123|BS. Tran Van An|an@clinic.com|0911111111|doctor|active
+4|bacsi02|bacsi123|BS. Le Thi Binh|binh@clinic.com|0922222222|doctor|active
+5|bacsi03|bacsi123|BS. Pham Van Cuong|cuong@clinic.com|0933333333|doctor|active
+6|benhnhan01|benhnhan123|Nguyen Van Dat|dat@email.com|0944444444|patient|active
+7|benhnhan02|benhnhan123|Tran Thi Em|em@email.com|0955555555|patient|active
+8|teyy|teyy|Tey|kjbdas@gmail.com|0123456789|patient|active
