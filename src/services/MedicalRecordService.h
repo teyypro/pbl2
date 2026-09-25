@@ -1,10 +1,10 @@
 #ifndef MEDICAL_RECORD_SERVICE_H
 #define MEDICAL_RECORD_SERVICE_H
 
-#include "MedicalRecordRepository.h"
-#include "PrescriptionRepository.h"
-#include "MedicineRepository.h"
-#include "Helpers.h"
+#include "../repositories/MedicalRecordRepository.h"
+#include "../repositories/PrescriptionRepository.h"
+#include "../repositories/MedicineRepository.h"
+#include "../utils/Helpers.h"
 #include <ctime>
 
 class MedicalRecordService {

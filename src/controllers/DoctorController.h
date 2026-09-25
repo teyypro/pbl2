@@ -1,13 +1,13 @@
 #ifndef DOCTOR_CONTROLLER_H
 #define DOCTOR_CONTROLLER_H
 
-#include "AppointmentService.h"
-#include "MedicalRecordService.h"
-#include "InvoiceService.h"
-#include "DoctorRepository.h"
-#include "MedicineRepository.h"
-#include "User.h"
-#include "Helpers.h"
+#include "../services/AppointmentService.h"
+#include "../services/MedicalRecordService.h"
+#include "../services/InvoiceService.h"
+#include "../repositories/DoctorRepository.h"
+#include "../repositories/MedicineRepository.h"
+#include "../models/User.h"
+#include "../utils/Helpers.h"
 
 class DoctorController {
 private:

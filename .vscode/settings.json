@@ -35,7 +35,15 @@
   ],
   "C_Cpp_Runner.enableWarnings": true,
   "C_Cpp_Runner.warningsAsError": false,
-  "C_Cpp_Runner.compilerArgs": [],
+  "C_Cpp_Runner.compilerArgs": [
+    "-Isrc",
+    "-Isrc/database",
+    "-Isrc/models",
+    "-Isrc/repositories",
+    "-Isrc/services",
+    "-Isrc/controllers",
+    "-Isrc/utils"
+  ],
   "C_Cpp_Runner.linkerArgs": [],
   "C_Cpp_Runner.includePaths": [],
   "C_Cpp_Runner.includeSearch": [
@@ -55,5 +63,12 @@
   "C_Cpp_Runner.useLeakSanitizer": false,
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
-  "C_Cpp_Runner.msvcSecureNoWarnings": false
+  "C_Cpp_Runner.msvcSecureNoWarnings": false,
+
+  "code-runner.executorMap": {
+    "cpp": "cd $workspaceRoot && build.bat",
+    "c": "cd $workspaceRoot && build.bat"
+  },
+  "code-runner.saveFileBeforeRun": true,
+  "code-runner.runInTerminal": true
 }

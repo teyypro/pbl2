@@ -1,14 +1,14 @@
 #ifndef RECEPTIONIST_CONTROLLER_H
 #define RECEPTIONIST_CONTROLLER_H
 
-#include "AppointmentService.h"
-#include "InvoiceService.h"
-#include "PatientRepository.h"
-#include "DoctorRepository.h"
-#include "DepartmentRepository.h"
-#include "ServiceRepository.h"
-#include "User.h"
-#include "Helpers.h"
+#include "../services/AppointmentService.h"
+#include "../services/InvoiceService.h"
+#include "../repositories/PatientRepository.h"
+#include "../repositories/DoctorRepository.h"
+#include "../repositories/DepartmentRepository.h"
+#include "../repositories/ServiceRepository.h"
+#include "../models/User.h"
+#include "../utils/Helpers.h"
 
 class ReceptionistController {
 private:

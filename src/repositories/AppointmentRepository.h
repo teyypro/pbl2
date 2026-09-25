@@ -1,8 +1,8 @@
 #ifndef APPOINTMENT_REPOSITORY_H
 #define APPOINTMENT_REPOSITORY_H
 
-#include "FileManager.h"
-#include "Appointment.h"
+#include "../database/FileManager.h"
+#include "../models/Appointment.h"
 #include <vector>
 
 class AppointmentRepository {

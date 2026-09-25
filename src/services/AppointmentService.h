@@ -1,12 +1,12 @@
 #ifndef APPOINTMENT_SERVICE_H
 #define APPOINTMENT_SERVICE_H
 
-#include "AppointmentRepository.h"
-#include "PatientRepository.h"
-#include "DoctorRepository.h"
-#include "DepartmentRepository.h"
-#include "ServiceRepository.h"
-#include "Helpers.h"
+#include "../repositories/AppointmentRepository.h"
+#include "../repositories/PatientRepository.h"
+#include "../repositories/DoctorRepository.h"
+#include "../repositories/DepartmentRepository.h"
+#include "../repositories/ServiceRepository.h"
+#include "../utils/Helpers.h"
 
 class AppointmentService {
 private:

@@ -1,13 +1,13 @@
 #ifndef ADMIN_CONTROLLER_H
 #define ADMIN_CONTROLLER_H
 
-#include "DepartmentRepository.h"
-#include "DoctorRepository.h"
-#include "PatientRepository.h"
-#include "ServiceRepository.h"
-#include "MedicineRepository.h"
-#include "UserRepository.h"
-#include "Helpers.h"
+#include "../repositories/DepartmentRepository.h"
+#include "../repositories/DoctorRepository.h"
+#include "../repositories/PatientRepository.h"
+#include "../repositories/ServiceRepository.h"
+#include "../repositories/MedicineRepository.h"
+#include "../repositories/UserRepository.h"
+#include "../utils/Helpers.h"
 
 class AdminController {
 private:

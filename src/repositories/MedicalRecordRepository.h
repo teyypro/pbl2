@@ -1,8 +1,8 @@
 #ifndef MEDICAL_RECORD_REPOSITORY_H
 #define MEDICAL_RECORD_REPOSITORY_H
 
-#include "FileManager.h"
-#include "MedicalRecord.h"
+#include "../database/FileManager.h"
+#include "../models/MedicalRecord.h"
 #include <vector>
 
 class MedicalRecordRepository {

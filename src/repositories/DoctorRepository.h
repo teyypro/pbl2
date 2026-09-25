@@ -1,9 +1,9 @@
 #ifndef DOCTOR_REPOSITORY_H
 #define DOCTOR_REPOSITORY_H
 
-#include "FileManager.h"
-#include "Doctor.h"
-#include "User.h"
+#include "../database/FileManager.h"
+#include "../models/Doctor.h"
+#include "../models/User.h"
 #include <vector>
 
 class DoctorRepository {

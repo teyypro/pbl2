@@ -1,8 +1,8 @@
 #ifndef DEPARTMENT_REPOSITORY_H
 #define DEPARTMENT_REPOSITORY_H
 
-#include "FileManager.h"
-#include "Department.h"
+#include "../database/FileManager.h"
+#include "../models/Department.h"
 #include <vector>
 
 class DepartmentRepository {

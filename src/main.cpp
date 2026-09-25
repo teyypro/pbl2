@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <string>
 
@@ -10,9 +11,6 @@
 
 using namespace std;
 
-// =============================================
-// HÀM HIỂN THỊ MENU CHÍNH
-// =============================================
 
 void showMainMenu() {
     Helpers::printTitle("HE THONG QUAN LY PHONG KHAM");
@@ -27,6 +25,7 @@ int main() {
     int choice;
 
     while (true) {
+        Helpers::clearScreen();
         showMainMenu();
         choice = Helpers::getInputInt("Chon: ");
 

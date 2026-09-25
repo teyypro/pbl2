@@ -1,13 +1,12 @@
 @echo off
 REM === Build & Run script cho PBL2 ===
-REM Dung file .txt de luu tru du lieu (khong can MySQL)
 REM Cach dung: build.bat
 
 cd /d "%~dp0"
 
 echo [*] Dang compile du an...
 
-g++ -o main.exe src/main.cpp -Isrc -Isrc/database -Isrc/models -Isrc/repositories -Isrc/services -Isrc/controllers -Isrc/utils -std=c++17
+g++ -o main.exe src/*.cpp -Isrc -std=c++17
 
 if %errorlevel% neq 0 (
     echo [X] Compile THAT BAI!

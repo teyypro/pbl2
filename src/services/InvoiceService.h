@@ -1,12 +1,12 @@
 #ifndef INVOICE_SERVICE_H
 #define INVOICE_SERVICE_H
 
-#include "InvoiceRepository.h"
-#include "MedicalRecordRepository.h"
-#include "PrescriptionRepository.h"
-#include "ServiceRepository.h"
-#include "MedicineRepository.h"
-#include "Helpers.h"
+#include "../repositories/InvoiceRepository.h"
+#include "../repositories/MedicalRecordRepository.h"
+#include "../repositories/PrescriptionRepository.h"
+#include "../repositories/ServiceRepository.h"
+#include "../repositories/MedicineRepository.h"
+#include "../utils/Helpers.h"
 #include <ctime>
 
 class InvoiceService {

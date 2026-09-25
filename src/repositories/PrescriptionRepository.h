@@ -1,8 +1,8 @@
 #ifndef PRESCRIPTION_REPOSITORY_H
 #define PRESCRIPTION_REPOSITORY_H
 
-#include "FileManager.h"
-#include "Prescription.h"
+#include "../database/FileManager.h"
+#include "../models/Prescription.h"
 #include <vector>
 
 class PrescriptionRepository {

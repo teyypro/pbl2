@@ -1,8 +1,8 @@
 #ifndef MEDICINE_REPOSITORY_H
 #define MEDICINE_REPOSITORY_H
 
-#include "FileManager.h"
-#include "Medicine.h"
+#include "../database/FileManager.h"
+#include "../models/Medicine.h"
 #include <vector>
 
 class MedicineRepository {

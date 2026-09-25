@@ -1,8 +1,8 @@
 #ifndef SERVICE_REPOSITORY_H
 #define SERVICE_REPOSITORY_H
 
-#include "FileManager.h"
-#include "Service.h"
+#include "../database/FileManager.h"
+#include "../models/Service.h"
 #include <vector>
 
 class ServiceRepository {

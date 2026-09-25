@@ -1,8 +1,8 @@
 #ifndef INVOICE_REPOSITORY_H
 #define INVOICE_REPOSITORY_H
 
-#include "FileManager.h"
-#include "Invoice.h"
+#include "../database/FileManager.h"
+#include "../models/Invoice.h"
 #include <vector>
 
 class InvoiceRepository {

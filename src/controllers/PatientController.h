@@ -1,12 +1,12 @@
 #ifndef PATIENT_CONTROLLER_H
 #define PATIENT_CONTROLLER_H
 
-#include "AppointmentService.h"
-#include "MedicalRecordService.h"
-#include "InvoiceService.h"
-#include "PatientRepository.h"
-#include "User.h"
-#include "Helpers.h"
+#include "../services/AppointmentService.h"
+#include "../services/MedicalRecordService.h"
+#include "../services/InvoiceService.h"
+#include "../repositories/PatientRepository.h"
+#include "../models/User.h"
+#include "../utils/Helpers.h"
 
 class PatientController {
 private:
