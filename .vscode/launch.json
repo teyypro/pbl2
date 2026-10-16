@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "PBL2 - F5 console CMD",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/StudentDocumentSystem/StudentDocumentSystem.exe",
+            "args": ["--data", "data"],
+            "cwd": "${workspaceFolder}/StudentDocumentSystem",
+            "externalConsole": true,
+            "stopAtEntry": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe",
+            "environment": [
+                {"name": "PATH", "value": "C:\\msys64\\ucrt64\\bin;${env:PATH}"}
+            ],
+            "preLaunchTask": "Build PBL2 C++"
+        }
+    ]
+}

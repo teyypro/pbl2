@@ -1,0 +1,4 @@
+DOC001|Giay xac nhan sinh vien|CTSV|0
+DOC002|Giay xac nhan vay von|CTSV|0
+DOC003|Bang diem|DAOTAO|10000
+DOC004|Chung nhan tot nghiep tam thoi|DAOTAO|20000

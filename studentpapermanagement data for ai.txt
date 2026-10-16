@@ -1,0 +1,638 @@
+STUDENT DOCUMENT REGISTRATION AND COLLECTION MANAGEMENT SYSTEM
+Hệ thống Quản lý Đăng ký và Nhận Giấy tờ Sinh viên
+1. GIỚI THIỆU DỰ ÁN
+1.1 Tên dự án
+Student Document Registration and Collection Management System
+
+(Hệ thống Quản lý Đăng ký và Nhận Giấy tờ Sinh viên)
+
+1.2 Mục tiêu
+Xây dựng hệ thống hỗ trợ:
+
+Sinh viên đăng ký các loại giấy tờ trực tuyến.
+Nhân viên xử lý hồ sơ duyệt và thực hiện cấp giấy tờ.
+Sinh viên lấy số thứ tự nhận giấy tờ tại quầy.
+Nhân viên quầy gọi số và trả giấy tờ.
+Dashboard thời gian thực hiển thị trạng thái hàng đợi.
+Hệ thống được xây dựng bằng:
+
+C++
+Lập trình hướng đối tượng (OOP)
+Template tự cài đặt
+File TXT làm nơi lưu trữ dữ liệu
+Kiến trúc 3 Layer
+2. PHẠM VI HỆ THỐNG
+Hệ thống phục vụ việc:
+
+Cấp giấy xác nhận sinh viên
+Giấy xác nhận vay vốn
+Bảng điểm
+Chứng nhận tốt nghiệp tạm thời
+Các loại giấy tờ thuộc Phòng Công Tác Sinh Viên
+Các loại giấy tờ thuộc Phòng Đào Tạo
+Có 2 phòng tiếp nhận:
+
+Phòng Công Tác Sinh Viên (CTSV)
+Phòng Đào Tạo (ĐT)
+Mỗi phòng có:
+
+1 quầy nhận giấy tờ
+1 hàng đợi riêng
+3. KIẾN TRÚC HỆ THỐNG
+3.1 Mô hình 3 Layer
+Presentation Layer
+Chứa giao diện người dùng.
+
+views/
+Bao gồm:
+
+LoginView
+StudentView
+ProcessingView
+CounterView
+GuestView
+DashboardView
+Business Layer
+Chứa xử lý nghiệp vụ.
+
+services/
+Bao gồm:
+
+AuthService
+RequestService
+ProcessingService
+QueueService
+CounterService
+Data Access Layer
+Chứa thao tác file TXT.
+
+repositories/
+Bao gồm:
+
+UserRepository
+RequestRepository
+DocumentRepository
+QueueRepository
+4. CÁC VAI TRÒ HỆ THỐNG
+4.1 Student
+Sinh viên đăng nhập bằng tài khoản sinh viên.
+
+Chức năng:
+
+Đăng nhập
+Xem danh sách giấy tờ
+Lập đề nghị cấp giấy tờ
+Theo dõi trạng thái đơn
+Xem ngày nhận giấy
+4.2 Processing Staff
+Nhân viên xử lý hồ sơ.
+
+Chức năng:
+
+Xem danh sách đề nghị
+Duyệt đề nghị
+Từ chối đề nghị
+Ghi lý do từ chối
+Cập nhật trạng thái in
+Cập nhật ngày nhận
+4.3 Counter Staff
+Nhân viên quầy.
+
+Chức năng:
+
+Xem hàng đợi
+Gọi số
+Xác minh sinh viên
+Trả giấy tờ
+Hoàn tất giao dịch
+4.4 Guest
+Chế độ khách.
+
+Không yêu cầu đăng nhập tài khoản.
+
+Chỉ nhập:
+
+Mã số sinh viên
+Sau đó:
+
+Chọn phòng
+Chọn loại giấy tờ
+Lấy số thứ tự
+5. QUY TRÌNH NGHIỆP VỤ
+5.1 Quy trình đăng ký giấy tờ
+Bước 1
+Sinh viên đăng nhập hệ thống.
+
+Bước 2
+Chọn loại giấy tờ.
+
+Ví dụ:
+
+Giấy xác nhận sinh viên
+Giấy xác nhận vay vốn
+Bảng điểm
+Chứng nhận tốt nghiệp
+Bước 3
+Nhập:
+
+Số lượng
+Ghi chú (nếu có)
+Bước 4
+Hệ thống kiểm tra phí.
+
+Ví dụ:
+
+Loại giấy tờ	Phí
+Giấy xác nhận SV	0
+Giấy vay vốn	0
+Bảng điểm	10000
+Chứng nhận tốt nghiệp	20000
+Bước 5
+Nhấn "Lập Đơn".
+
+Hệ thống tạo:
+
+Request
+Trạng thái:
+
+PENDING
+Ghi nhận:
+
+Đề nghị lúc
+Ví dụ:
+
+15/05/2027 08:30
+5.2 Quy trình xử lý hồ sơ
+Bước 1
+Processing Staff đăng nhập.
+
+Bước 2
+Xem danh sách đơn chờ.
+
+Bước 3
+Kiểm tra hồ sơ.
+
+Bước 4A
+Nếu hợp lệ:
+
+APPROVED
+Bước 4B
+Nếu không hợp lệ:
+
+REJECTED
+Nhập:
+
+Lý do từ chối
+Ví dụ:
+
+Nợ học phí
+Sai thông tin
+Không đủ điều kiện
+Bước 5
+Xử lý giấy tờ.
+
+Các thao tác bên ngoài hệ thống:
+
+In giấy
+Xin chữ ký
+Đóng dấu
+Bước 6
+Cập nhật:
+
+Đã in lúc
+Ví dụ:
+
+16/05/2027 09:00
+Bước 7
+Nhập:
+
+Ngày nhận
+Ví dụ:
+
+17/05/2027 14:00
+Trạng thái:
+
+READY_FOR_COLLECTION
+5.3 Quy trình lấy số thứ tự
+Bước 1
+Sinh viên đến trường.
+
+Bước 2
+Mở Guest Mode.
+
+Bước 3
+Nhập:
+
+Mã số sinh viên
+Ví dụ:
+
+22110001
+Bước 4
+Chọn phòng.
+
+1. Công tác sinh viên
+2. Đào tạo
+Bước 5
+Hệ thống hiển thị danh sách giấy tờ có thể nhận.
+
+Bước 6
+Sinh viên chọn loại giấy tờ.
+
+Bước 7
+Hệ thống cấp số.
+
+Ví dụ:
+
+CTSV-015
+Hoặc:
+
+DT-023
+Bước 8
+Vé được đưa vào hàng đợi.
+
+5.4 Quy trình trả giấy tờ
+Bước 1
+Counter Staff đăng nhập.
+
+Bước 2
+Mở danh sách chờ.
+
+Bước 3
+Nhấn:
+
+Gọi số tiếp theo
+Bước 4
+Hệ thống hiển thị:
+
+Số thứ tự
+MSSV
+Họ tên
+Loại giấy tờ
+Bước 5
+Sinh viên đến quầy.
+
+Bước 6
+Nhân viên xác minh.
+
+Kiểm tra:
+
+MSSV
+CCCD hoặc Thẻ sinh viên
+Bước 7
+Trao giấy tờ.
+
+Bước 8
+Nhấn:
+
+Hoàn tất
+Trạng thái:
+
+COLLECTED
+6. DASHBOARD REALTIME
+Mục tiêu
+Hiển thị công khai tại khu vực chờ.
+
+Tự động refresh liên tục.
+
+Ví dụ:
+
+CẬP NHẬT MỖI 5 GIÂY
+Thông tin hiển thị
+Quầy CTSV
+Đang phục vụ:
+CTSV-015
+
+Chờ tiếp theo:
+CTSV-016
+CTSV-017
+CTSV-018
+Quầy Đào Tạo
+Đang phục vụ:
+DT-023
+
+Chờ tiếp theo:
+DT-024
+DT-025
+DT-026
+Cơ chế
+Dashboard đọc dữ liệu từ:
+
+queue_ctsv.txt
+queue_daotao.txt
+và tự load lại định kỳ.
+
+7. MÔ HÌNH DỮ LIỆU
+7.1 User
+class User
+{
+protected:
+    string userId;
+    string username;
+    string password;
+    string fullName;
+    UserRole role;
+};
+7.2 Student
+class Student : public User
+{
+private:
+    string studentId;
+    string className;
+    string faculty;
+};
+7.3 ProcessingStaff
+class ProcessingStaff : public User
+{
+};
+7.4 CounterStaff
+class CounterStaff : public User
+{
+};
+7.5 DocumentType
+class DocumentType
+{
+private:
+    string documentId;
+    string documentName;
+    Department department;
+    double fee;
+};
+7.6 Request
+class Request
+{
+private:
+    string requestId;
+    string studentId;
+    string documentId;
+
+    int quantity;
+
+    RequestStatus status;
+
+    string requestedAt;
+    string approvedAt;
+    string printedAt;
+    string readyAt;
+    string collectedAt;
+
+    string rejectReason;
+};
+7.7 Ticket
+class Ticket
+{
+private:
+    string ticketNumber;
+    string studentId;
+    string requestId;
+
+    Department department;
+
+    string issueTime;
+};
+8. ENUM
+8.1 UserRole
+enum UserRole
+{
+    STUDENT,
+    PROCESSING_STAFF,
+    COUNTER_STAFF
+};
+8.2 Department
+enum Department
+{
+    CTSV,
+    DAOTAO
+};
+8.3 RequestStatus
+enum RequestStatus
+{
+    PENDING,
+    APPROVED,
+    REJECTED,
+    PRINTED,
+    READY_FOR_COLLECTION,
+    COLLECTED
+};
+9. FILE DỮ LIỆU
+users.txt
+U001|student01|123456|Nguyen Van A|STUDENT
+U002|processor01|123456|Le Thi B|PROCESSING_STAFF
+U003|counter01|123456|Tran Van C|COUNTER_STAFF
+students.txt
+22110001|Nguyen Van A|CNTT1|CNTT
+documents.txt
+DOC001|Giay xac nhan sinh vien|CTSV|0
+DOC002|Giay vay von|CTSV|0
+DOC003|Bang diem|DAOTAO|10000
+requests.txt
+RQ001|22110001|DOC001|2|PENDING|2027-05-16 08:30
+queue_ctsv.txt
+CTSV-001
+CTSV-002
+CTSV-003
+queue_daotao.txt
+DT-001
+DT-002
+10. TEMPLATE TỰ CÀI ĐẶT
+MyList
+Chức năng:
+
+Add
+Remove
+Find
+GetByIndex
+Size
+Sử dụng Linked List.
+
+MyQueue
+Chức năng:
+
+Enqueue
+Dequeue
+Front
+Empty
+Size
+Sử dụng Linked List.
+
+MyStack
+Chức năng:
+
+Push
+Pop
+Top
+Empty
+Sử dụng Linked List.
+
+11. CHỨC NĂNG SERVICE
+AuthService
+Login
+Logout
+Validate User
+RequestService
+Create Request
+View My Requests
+Update Status
+ProcessingService
+Approve Request
+Reject Request
+Mark Printed
+Set Ready Date
+QueueService
+Generate Ticket
+Add Queue
+Remove Queue
+Get Current Queue
+CounterService
+Call Next Ticket
+Complete Ticket
+Verify Student
+12. YÊU CẦU PHI CHỨC NĂNG
+Yêu cầu đăng nhập đối với Student
+Yêu cầu đăng nhập đối với Staff
+Guest không có quyền chỉnh sửa dữ liệu
+Khả năng mở rộng
+
+13. SƠ ĐỒ USE CASE
+Student
+Login
+Xem giấy tờ
+Đăng ký giấy tờ
+Xem trạng thái hồ sơ
+Processing Staff
+Login
+Duyệt hồ sơ
+Từ chối hồ sơ
+In giấy tờ
+Cập nhật ngày nhận
+Guest
+Nhập MSSV
+Chọn phòng
+Lấy số thứ tự
+Counter Staff
+Login
+Gọi số
+Xác minh sinh viên
+Trả giấy tờ
+Dashboard
+Hiển thị số đang gọi
+Hiển thị hàng đợi
+Tự động refresh
+14. TIÊU CHÍ ĐÁNH GIÁ OOP
+Áp dụng đầy đủ:
+
+Encapsulation
+Thuộc tính private
+Getter / Setter
+Inheritance
+User → Student
+User → ProcessingStaff
+User → CounterStaff
+Polymorphism
+Virtual methods:
+
+virtual void showMenu();
+Abstraction
+Repository và Service hoạt động thông qua interface nghiệp vụ.
+
+15. KẾT QUẢ MONG MUỐN
+Hệ thống hoàn chỉnh cho phép:
+
+Sinh viên đăng ký giấy tờ trực tuyến.
+Nhân viên xử lý duyệt hồ sơ.
+Sinh viên lấy số nhận giấy.
+Nhân viên quầy trả giấy.
+Dashboard hiển thị thời gian thực.
+Lưu trữ hoàn toàn bằng file TXT.
+Áp dụng OOP + Template + 3-Layer Architecture theo yêu cầu môn học C++.
+
+16. Folder Directory
+StudentDocumentSystem/
+│
+├── main.cpp
+│
+├── data/
+│   ├── users.txt
+│   ├── students.txt
+│   ├── requests.txt
+│   ├── documents.txt
+│   ├── queue_ctsv.txt
+│   └── queue_daotao.txt
+│
+├── models/
+│   ├── User.h
+│   ├── User.cpp
+│   │
+│   ├── Student.h
+│   ├── Student.cpp
+│   │
+│   ├── ProcessingStaff.h
+│   ├── ProcessingStaff.cpp
+│   │
+│   ├── CounterStaff.h
+│   ├── CounterStaff.cpp
+│   │
+│   ├── Request.h
+│   ├── Request.cpp
+│   │
+│   ├── DocumentType.h
+│   ├── DocumentType.cpp
+│   │
+│   ├── Ticket.h
+│   └── Ticket.cpp
+│
+├── templates/
+│   ├── MyList.h
+│   ├── MyQueue.h
+│   └── MyStack.h
+│
+├── services/
+│   ├── AuthService.h
+│   ├── AuthService.cpp
+│   │
+│   ├── RequestService.h
+│   ├── RequestService.cpp
+│   │
+│   ├── QueueService.h
+│   ├── QueueService.cpp
+│   │
+│   ├── ProcessingService.h
+│   ├── ProcessingService.cpp
+│   │
+│   ├── CounterService.h
+│   └── CounterService.cpp
+│
+├── repositories/
+│   ├── UserRepository.h
+│   ├── UserRepository.cpp
+│   │
+│   ├── RequestRepository.h
+│   ├── RequestRepository.cpp
+│   │
+│   ├── DocumentRepository.h
+│   ├── DocumentRepository.cpp
+│   │
+│   └── QueueRepository.h
+│       QueueRepository.cpp
+│
+├── views/
+│   ├── LoginView.cpp
+│   ├── StudentView.cpp
+│   ├── ProcessingView.cpp
+│   ├── CounterView.cpp
+│   ├── GuestView.cpp
+│   └── DashboardView.cpp
+│
+├── utils/
+│   ├── FileHelper.h
+│   ├── FileHelper.cpp
+│   │
+│   ├── DateTimeHelper.h
+│   ├── DateTimeHelper.cpp
+│   │
+│   └── IDGenerator.h
+│       IDGenerator.cpp
+│
+└── enums/
+    ├── RequestStatus.h
+    ├── UserRole.h
+    └── Department.h
