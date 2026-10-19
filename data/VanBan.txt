@@ -1,0 +1,5 @@
+VB001|Giấy xác nhận sinh viên|PH002
+VB002|Giấy vay vốn|PH002
+VB003|Giấy tạm hoãn NVQS|PH002
+VB004|Bảng điểm toàn khóa|PH001
+VB005|Giấy xác nhận hoàn thành chương trình|PH001

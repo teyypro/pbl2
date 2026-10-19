@@ -1,0 +1,2 @@
+PH001|Phòng Đào Tạo|pdt001
+PH002|Phòng CTSV|ctsv001
