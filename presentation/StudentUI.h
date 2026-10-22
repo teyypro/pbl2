@@ -10,12 +10,10 @@ private:
     string maSV;
 
     void dangKyGiayTo();
-
     void xemHoSo();
 
 public:
     Student(const TaiKhoan& a, AppContext& c);
-
     void showMenu();
 };
 

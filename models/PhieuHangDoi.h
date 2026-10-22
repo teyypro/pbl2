@@ -1,0 +1,51 @@
+#ifndef PHIEUHANGDOI_H
+#define PHIEUHANGDOI_H
+
+#include "../orm/Entity.h"
+#include "../orm/Navigation.h"
+
+class SinhVien;
+class Quay;
+class VanBan;
+
+class PhieuHangDoi : public Entity
+{
+private:
+    string maPhieu;
+    int soThuTu;
+    string maSV;
+    string maQuay;
+    string trangThai;
+    string maVB;                           // yêu cầu: "TUVAN" hoặc mã văn bản cần giải quyết
+
+public:
+    // ----- Navigation Property (N-1) -----
+    Reference<SinhVien> sinhVien;          // phiếu của sinh viên nào
+    Reference<Quay>     quay;              // phiếu thuộc quầy nào
+    Reference<VanBan>   vanBan;            // văn bản cần giải quyết (NULL nếu là tư vấn)
+
+    PhieuHangDoi();
+    PhieuHangDoi(const string& maPhieu, int soThuTu, const string& maSV,
+                 const string& maQuay, const string& trangThai, const string& maVB);
+
+    string getMaPhieu() const { return maPhieu; }
+    int getSoThuTu() const { return soThuTu; }
+    string getMaSV() const { return maSV; }
+    string getMaQuay() const { return maQuay; }
+    string getTrangThai() const { return trangThai; }
+    string getMaVB() const { return maVB; }
+    void setTrangThai(const string& v) { trangThai = v; }
+
+    string getDisplay() const;      // số hiển thị trên vé, ví dụ A015
+    bool isConsult() const;         // true nếu là phiếu tư vấn
+    string tenYeuCau() const;       // "Tư vấn" hoặc tên văn bản (qua navigation vanBan)
+
+    // ORM
+    string tableName() const;
+    Row columns() const;
+    Row toRow() const;
+    void fromRow(const Row& row);
+    void loadRelations(DbContext* ctx);
+};
+
+#endif

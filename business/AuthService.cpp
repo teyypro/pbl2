@@ -1,18 +1,13 @@
 #include "AuthService.h"
 
-AuthService::AuthService(TaiKhoanRepo& r) : repo(r) {}
+AuthService::AuthService(DbContext& d) : db(d) {}
 
+// TaiKhoan trả về đã được nạp sẵn navigation (sinhVien / phong / quay)
 bool AuthService::login(const string& username, const string& password, TaiKhoan& out)
 {
-    repo.load();
-    const MyList<TaiKhoan>& all = repo.getAll();
-    for (int i = 0; i < all.getSize(); i++)
-    {
-        if (all[i].getUsername() == username && all[i].getPassword() == password)
-        {
-            out = all[i];
-            return true;
-        }
-    }
-    return false;
+    TaiKhoan t;
+    if (!db.taiKhoan.findByKey(username, t)) return false;   // username là khóa chính
+    if (t.getPassword() != password) return false;
+    out = t;
+    return true;
 }

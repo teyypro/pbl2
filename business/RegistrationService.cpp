@@ -1,49 +1,70 @@
 #include "RegistrationService.h"
 
-string RegistrationService::nextMaDK()
+RegistrationService::RegistrationService(DbContext& d) : db(d) {}
+
+// UC01: Đăng ký giấy tờ -> tạo hồ sơ PENDING
+bool RegistrationService::registerDocument(const string& maSV, const string& maVB, string& msg)
 {
-    int mx = 0;
-    const MyList<DangKy>& all = dkRepo.getAll();
-    for (int i = 0; i < all.getSize(); i++)
+    SinhVien sv;
+    if (!db.sinhVien.findByKey(maSV, sv)) { msg = "Sinh viên không tồn tại."; return false; }
+
+    VanBan vb;
+    if (!db.vanBan.findByKey(maVB, vb, false)) { msg = "Văn bản không tồn tại."; return false; }
+
+    const MyList<DangKy>& mine = sv.dangKys.items();     // Navigation 1-N: hồ sơ của sinh viên
+    for (int i = 0; i < mine.getSize(); i++)
     {
-        string k = all[i].getMaDK();
-        if (k.size() > 2)
+        if (mine[i].getMaVB() == maVB &&
+            (mine[i].getTrangThai() == ST_PENDING || mine[i].getTrangThai() == ST_APPROVED))
         {
-            int n = toInt(k.substr(2), 0);
-            if (n > mx) mx = n;
+            msg = "Bạn đã có hồ sơ " + mine[i].getMaDK() + " cho văn bản này đang được xử lý.";
+            return false;
         }
     }
-    return "DK" + pad(mx + 1, 3);
+
+    DangKy dk(db.dangKy.nextId("DK", 3), maSV, maVB, ST_PENDING, "", nowDateTime(), "", "");
+    db.dangKy.add(dk);
+    msg = "Đăng ký thành công. Mã đơn: " + dk.getMaDK();
+    return true;
 }
 
-bool RegistrationService::thuocPhong(const string& maVB, const string& maPHG)
+// UC02: Hồ sơ của một sinh viên.
+// Dùng truy vấn của DbSet (thay vì sv.dangKys) để mỗi DangKy trả về có sẵn navigation vanBan
+// (quy tắc nạp 1 cấp: phần tử của Collection không có navigation riêng).
+MyList<DangKy> RegistrationService::getBySinhVien(const string& maSV)
 {
-    VanBan vb;
-    return vbRepo.findByKey(maVB, vb) && vb.getMaPHG() == maPHG;
+    return db.dangKy.findBy("maSV", maSV);
 }
 
+// Lọc hồ sơ theo trạng thái và theo phòng (đi qua Navigation N-1: DangKy -> VanBan).
 MyList<DangKy> RegistrationService::collect(const string& maPHG, const string& status, int mode)
 {
-    dkRepo.load();
-    vbRepo.load();
-    MyList<DangKy> r;
-    const MyList<DangKy>& all = dkRepo.getAll();
-    for (int i = 0; i < all.getSize(); i++)
+    MyList<DangKy> list = db.dangKy.findBy("trangThai", status);
+    MyList<DangKy> result;
+
+    for (int i = 0; i < list.getSize(); i++)
     {
-        const DangKy& d = all[i];
-        if (d.getTrangThai() != status) continue;
-        if (!thuocPhong(d.getMaVB(), maPHG)) continue;
-        if (mode == 1 && !d.getNgayIn().empty()) continue;
-        if (mode == 2 && d.getNgayIn().empty()) continue;
-        r.add(d);
+        VanBan* vb = list[i].vanBan.get();               // Navigation N-1
+        if (vb == NULL || vb->getMaPHG() != maPHG) continue;
+
+        bool coIn = !list[i].getNgayIn().empty();
+        bool coNhan = !list[i].getNgayNhan().empty();
+
+        if (mode == 1 && coIn) continue;
+        if (mode == 2 && !coIn) continue;
+        if (mode == 3 && (!coIn || coNhan)) continue;
+        result.add(list[i]);
     }
-    return r;
+    return result;
 }
+
+MyList<DangKy> RegistrationService::getPending(const string& maPHG)    { return collect(maPHG, ST_PENDING, 0); }
+MyList<DangKy> RegistrationService::getForPrint(const string& maPHG)   { return collect(maPHG, ST_APPROVED, 1); }
+MyList<DangKy> RegistrationService::getForReceive(const string& maPHG) { return collect(maPHG, ST_APPROVED, 3); }
 
 bool RegistrationService::loadPending(const string& maDK, DangKy& dk, string& msg)
 {
-    dkRepo.load();
-    if (!dkRepo.findByKey(maDK, dk)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
+    if (!db.dangKy.findByKey(maDK, dk, false)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
     if (dk.getTrangThai() != ST_PENDING)
     {
         msg = "Đơn " + maDK + " không ở trạng thái PENDING.";
@@ -52,69 +73,13 @@ bool RegistrationService::loadPending(const string& maDK, DangKy& dk, string& ms
     return true;
 }
 
-RegistrationService::RegistrationService(DangKyRepo& d, VanBanRepo& v, SinhVienRepo& s) : dkRepo(d), vbRepo(v), svRepo(s) {}
-
-bool RegistrationService::getMaSV(const string& username, string& maSV)
-{
-    svRepo.load();
-    const MyList<SinhVien>& all = svRepo.getAll();
-    for (int i = 0; i < all.getSize(); i++)
-    {
-        if (all[i].getUsername() == username) { maSV = all[i].getMaSV(); return true; }
-    }
-    return false;
-}
-
-string RegistrationService::tenVanBan(const string& maVB)
-{
-    vbRepo.load();
-    VanBan vb;
-    if (vbRepo.findByKey(maVB, vb)) return vb.getTenVB();
-    return maVB;
-}
-
-bool RegistrationService::registerDocument(const string& maSV, const string& maVB, string& msg)
-{
-    dkRepo.load();
-    vbRepo.load();
-    VanBan vb;
-    if (!vbRepo.findByKey(maVB, vb)) { msg = "Văn bản không tồn tại."; return false; }
-
-    const MyList<DangKy>& all = dkRepo.getAll();
-    for (int i = 0; i < all.getSize(); i++)
-    {
-        if (all[i].getMaSV() == maSV && all[i].getMaVB() == maVB &&
-            (all[i].getTrangThai() == ST_PENDING || all[i].getTrangThai() == ST_APPROVED))
-        {
-            msg = "Bạn đã có hồ sơ " + all[i].getMaDK() + " cho văn bản này đang được xử lý.";
-            return false;
-        }
-    }
-
-    DangKy dk(nextMaDK(), maSV, maVB, ST_PENDING, "", today(), "", "");
-    dkRepo.add(dk);
-    msg = "Đăng ký thành công. Mã đơn: " + dk.getMaDK();
-    return true;
-}
-
-MyList<DangKy> RegistrationService::getBySinhVien(const string& maSV)
-{
-    dkRepo.load();
-    MyList<DangKy> r;
-    const MyList<DangKy>& all = dkRepo.getAll();
-    for (int i = 0; i < all.getSize(); i++)
-        if (all[i].getMaSV() == maSV) r.add(all[i]);
-    return r;
-}
-
-MyList<DangKy> RegistrationService::getPending(const string& maPHG) { return collect(maPHG, ST_PENDING, 0); }
-
+// UC03: Duyệt / từ chối
 bool RegistrationService::approve(const string& maDK, string& msg)
 {
     DangKy dk;
     if (!loadPending(maDK, dk, msg)) return false;
     dk.setTrangThai(ST_APPROVED);
-    dkRepo.update(dk);
+    db.dangKy.update(dk);
     msg = "Đã duyệt đơn " + maDK + ".";
     return true;
 }
@@ -124,72 +89,92 @@ bool RegistrationService::reject(const string& maDK, const string& reason, strin
     DangKy dk;
     if (!loadPending(maDK, dk, msg)) return false;
     dk.setTrangThai(ST_REJECTED);
-    dk.setLyDo(cleanField(reason));
-    dkRepo.update(dk);
+    dk.setLyDo(reason);
+    db.dangKy.update(dk);
     msg = "Đã từ chối đơn " + maDK + ".";
     return true;
 }
 
-MyList<DangKy> RegistrationService::getForPrint(const string& maPHG) { return collect(maPHG, ST_APPROVED, 1); }
-
-MyList<DangKy> RegistrationService::getForReceive(const string& maPHG) { return collect(maPHG, ST_APPROVED, 2); }
-
-int RegistrationService::exportPrintList(const string& maPHG, const string& path)
+// UC04: Xuất danh sách cần in ra data/PrintList.txt. Trả về số hồ sơ, -1 nếu lỗi ghi file
+int RegistrationService::exportPrintList(const string& maPHG)
 {
     MyList<DangKy> ds = getForPrint(maPHG);
     if (ds.isEmpty()) return 0;
 
     MyList<string> lines;
-    lines.add("DANH SACH CAN IN - NGAY " + today());
+    lines.add("DANH SACH CAN IN - " + nowDateTime());
     lines.add("STT | MaDon | MSSV | TenVanBan | NgayDangKy");
     for (int i = 0; i < ds.getSize(); i++)
     {
         lines.add(to_string(i + 1) + " | " + ds[i].getMaDK() + " | " + ds[i].getMaSV() + " | " +
-                  tenVanBan(ds[i].getMaVB()) + " | " + ds[i].getNgayDK());
+                  ds[i].tenVanBan() + " | " + ds[i].getNgayDK());
     }
-    if (!FileManager::writeLines(path, lines)) return -1;
-    return ds.getSize();
+    return db.database().writeLines("PrintList.txt", lines) ? ds.getSize() : -1;
 }
 
-bool RegistrationService::setNgayIn(const string& maDK, string date, string& msg)
+// UC05: Cập nhật ngày in = thời điểm bấm cập nhật (dd/mm/yyyy HH:MM:SS)
+bool RegistrationService::setNgayIn(const string& maDK, const string& thoiGian, string& msg)
 {
-    dkRepo.load();
     DangKy dk;
-    if (!dkRepo.findByKey(maDK, dk)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
+    if (!db.dangKy.findByKey(maDK, dk, false)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
     if (dk.getTrangThai() != ST_APPROVED) { msg = "Đơn " + maDK + " chưa được duyệt (APPROVED)."; return false; }
-    if (!normalizeDate(date)) { msg = "Ngày không hợp lệ (định dạng dd/mm/yyyy)."; return false; }
-    dk.setNgayIn(date);
-    dkRepo.update(dk);
-    msg = "Đã cập nhật ngày in cho đơn " + maDK + ": " + date;
+    if (!dk.getNgayIn().empty()) { msg = "Đơn " + maDK + " đã có ngày in (" + dk.getNgayIn() + ")."; return false; }
+
+    dk.setNgayIn(thoiGian);
+    db.dangKy.update(dk);
+    msg = "Đã cập nhật ngày in cho đơn " + maDK + ": " + thoiGian;
     return true;
 }
 
-bool RegistrationService::setNgayNhan(const string& maDK, string date, string& msg)
+// UC06: Cập nhật ngày nhận = thời điểm bấm cập nhật (không được trước ngày in)
+bool RegistrationService::setNgayNhan(const string& maDK, const string& thoiGian, string& msg)
 {
-    dkRepo.load();
     DangKy dk;
-    if (!dkRepo.findByKey(maDK, dk)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
+    if (!db.dangKy.findByKey(maDK, dk, false)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
     if (dk.getTrangThai() != ST_APPROVED) { msg = "Đơn " + maDK + " chưa được duyệt (APPROVED)."; return false; }
     if (dk.getNgayIn().empty()) { msg = "Đơn " + maDK + " chưa có ngày in."; return false; }
-    if (!normalizeDate(date)) { msg = "Ngày không hợp lệ (định dạng dd/mm/yyyy)."; return false; }
-    if (dateToDays(date) < dateToDays(dk.getNgayIn()))
+    if (!dk.getNgayNhan().empty()) { msg = "Đơn " + maDK + " đã có ngày nhận (" + dk.getNgayNhan() + ")."; return false; }
+    if (dateTimeToSeconds(thoiGian) < dateTimeToSeconds(dk.getNgayIn()))
     {
         msg = "Ngày nhận không được trước ngày in (" + dk.getNgayIn() + ").";
         return false;
     }
-    dk.setNgayNhan(date);
-    dkRepo.update(dk);
-    msg = "Đã cập nhật ngày nhận cho đơn " + maDK + ": " + date;
+
+    dk.setNgayNhan(thoiGian);
+    db.dangKy.update(dk);
+    msg = "Đã cập nhật ngày nhận cho đơn " + maDK + ": " + thoiGian;
     return true;
 }
 
+// UC12: các giấy của sinh viên cần xử lý trả tại phòng maPHG
+// (đã duyệt, đã có ngày nhận, chưa trả, thuộc phòng của quầy)
+MyList<DangKy> RegistrationService::getForReturn(const string& maSV, const string& maPHG)
+{
+    MyList<DangKy> list = db.dangKy.findBy("maSV", maSV);
+    MyList<DangKy> result;
+    for (int i = 0; i < list.getSize(); i++)
+    {
+        if (list[i].getTrangThai() != ST_APPROVED) continue;
+        if (list[i].getNgayNhan().empty()) continue;
+        VanBan* vb = list[i].vanBan.get();               // Navigation N-1
+        if (vb == NULL || vb->getMaPHG() != maPHG) continue;
+        result.add(list[i]);
+    }
+    return result;
+}
+
+// UC12: Xác nhận trả giấy. Điều kiện: ngày nhận <= hôm nay <= ngày nhận + 30 ngày
+// (so sánh theo ngày, phần giờ không ảnh hưởng)
 bool RegistrationService::confirmReceive(const string& maDK, const string& maSVDangPhucVu, string& msg)
 {
-    dkRepo.load();
     DangKy dk;
-    if (!dkRepo.findByKey(maDK, dk)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
+    if (!db.dangKy.findByKey(maDK, dk, false)) { msg = "Không tìm thấy đơn " + maDK + "."; return false; }
     if (dk.getMaSV() != maSVDangPhucVu) { msg = "Đơn này không thuộc sinh viên đang được phục vụ."; return false; }
-    if (dk.getTrangThai() != ST_APPROVED) { msg = "Đơn chưa ở trạng thái APPROVED (hiện tại: " + dk.getTrangThai() + ")."; return false; }
+    if (dk.getTrangThai() != ST_APPROVED)
+    {
+        msg = "Đơn chưa ở trạng thái APPROVED (hiện tại: " + dk.getTrangThai() + ").";
+        return false;
+    }
     if (dk.getNgayNhan().empty()) { msg = "Đơn chưa có ngày nhận."; return false; }
 
     long t = dateToDays(today());
@@ -198,7 +183,7 @@ bool RegistrationService::confirmReceive(const string& maDK, const string& maSVD
     if (t > n + 30) { msg = "Đã quá hạn nhận giấy (hạn: ngày nhận + 30 ngày)."; return false; }
 
     dk.setTrangThai(ST_DONE);
-    dkRepo.update(dk);
+    db.dangKy.update(dk);
     msg = "Đã nhận thành công. Đơn " + maDK + " chuyển sang DONE.";
     return true;
 }

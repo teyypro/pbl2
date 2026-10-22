@@ -1,2 +1,3 @@
-PH001|Phòng Đào Tạo|pdt001
-PH002|Phòng CTSV|ctsv001
+P01|Phòng Công tác Sinh viên|ctsv001
+P02|Phòng Công tác Sinh viên 2|ctsv002
+P03|Phòng Đào tạo|pdt001

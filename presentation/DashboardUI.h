@@ -3,7 +3,7 @@
 
 #include "../business/AppContext.h"
 
-// UC09: Dashboard công khai, reload mỗi 3 giây từ CurrentServing.txt
+// UC09: Dashboard công khai, tự reload mỗi 3 giây từ CurrentServing.txt
 class DashboardUI
 {
 public:

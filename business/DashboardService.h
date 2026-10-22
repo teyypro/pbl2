@@ -1,31 +1,29 @@
 #ifndef DASHBOARDSERVICE_H
 #define DASHBOARDSERVICE_H
 
-#include "../data/Repositories.h"
+#include "../orm/DbContext.h"
+#include "../models/Constants.h"
 
 struct CounterDisplay
 {
     string maQuay;
     string soHienThi;
     bool active;
-    CounterDisplay();
+    MyList<string> danhSachCho;  
+    CounterDisplay() : active(true) {}
 };
 
-// Dashboard công khai: ghi / đọc CurrentServing.txt
+// Dashboard công khai: ghi / đọc data/CurrentServing.txt
 class DashboardService
 {
 private:
-    PhieuRepo& phieuRepo;
-    QuayRepo& quayRepo;
-    string path;
+    DbContext& db;
 
 public:
-    DashboardService(PhieuRepo& p, QuayRepo& q, const string& file);
+    DashboardService(DbContext& db);
 
-    // Dựng lại CurrentServing.txt từ danh sách phiếu SERVING hiện tại
-    void refresh();
-
-    MyList<CounterDisplay> readCurrent();
+    void refresh();                        // dựng lại CurrentServing.txt từ các phiếu SERVING
+    MyList<CounterDisplay> readCurrent();  // đọc CurrentServing.txt
 };
 
 #endif

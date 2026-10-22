@@ -1,5 +1,13 @@
 #include "StudentUI.h"
+#include <iostream>
 
+Student::Student(const TaiKhoan& a, AppContext& c) : User(a), ctx(c)
+{
+    SinhVien* sv = account.sinhVien.get();          // Navigation 1-1: TaiKhoan -> SinhVien
+    maSV = (sv != NULL) ? sv->getMaSV() : string("");
+}
+
+// UC01
 void Student::dangKyGiayTo()
 {
     MyList<Phong> ds = ctx.doc.getAllPhong();
@@ -27,6 +35,7 @@ void Student::dangKyGiayTo()
     pauseScreen();
 }
 
+// UC02
 void Student::xemHoSo()
 {
     MyList<DangKy> ds = ctx.reg.getBySinhVien(maSV);
@@ -34,15 +43,10 @@ void Student::xemHoSo()
     if (ds.isEmpty()) cout << "Bạn chưa đăng ký hồ sơ nào.\n";
     for (int i = 0; i < ds.getSize(); i++)
     {
-        printDangKy(ctx.reg, ds[i]);
+        printDangKy(ds[i]);
         cout << endl;
     }
     pauseScreen();
-}
-
-Student::Student(const TaiKhoan& a, AppContext& c) : User(a), ctx(c)
-{
-    if (!ctx.reg.getMaSV(a.getUsername(), maSV)) maSV = "";
 }
 
 void Student::showMenu()

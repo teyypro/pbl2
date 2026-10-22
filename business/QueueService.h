@@ -1,36 +1,35 @@
 #ifndef QUEUESERVICE_H
 #define QUEUESERVICE_H
 
-#include "../data/Repositories.h"
-#include "../templates/MyQueue.h"
+#include "../orm/DbContext.h"
+#include "../models/Constants.h"
 #include "DashboardService.h"
 
-// Quản lý hàng đợi nhiều quầy + chia tải tự động
+// Hàng đợi nhiều quầy + chia tải tự động (theo từng phòng)
 class QueueService
 {
 private:
-    PhieuRepo& phieuRepo;
-    QuayRepo& quayRepo;
-    SinhVienRepo& svRepo;
+    DbContext& db;
     DashboardService& dash;
 
-    // Đếm số phiếu WAITING của một quầy (không load lại file)
-    int countWaitingNoLoad(const string& maQuay);
+    MyList<PhieuHangDoi> ticketsOf(const string& maQuay);   // các phiếu của một quầy
 
 public:
-    QueueService(PhieuRepo& p, QuayRepo& q, SinhVienRepo& s, DashboardService& d);
+    QueueService(DbContext& db, DashboardService& dash);
 
-    // UC07 + UC08: Guest nhập MSSV -> tạo phiếu, gán vào quầy ĐANG HOẠT ĐỘNG có ít người chờ nhất
-    bool takeTicket(const string& maSV, PhieuHangDoi& out, string& msg);
+    bool getQuay(const string& maQuay, Quay& out);                            // Quay đầy đủ quan hệ
 
-    // UC10: Quầy gọi số tiếp theo (WAITING -> SERVING). Phiếu SERVING trước đó -> FINISHED
-    bool callNext(const string& maQuay, PhieuHangDoi& out, string& msg);
+    // Kiểm tra sinh viên có được lấy số không (tồn tại, chưa có số đang chờ)
+    bool canTakeTicket(const string& maSV, string& msg);
 
-    bool getServing(const string& maQuay, PhieuHangDoi& out);
+    // UC07 + UC08: lấy số theo PHÒNG và NỘI DUNG (maVB = REQ_CONSULT nếu chọn "Tư vấn")
+    // Phiếu được gán vào quầy ĐANG HOẠT ĐỘNG của phòng đó có ít người chờ nhất
+    bool takeTicket(const string& maSV, const string& maPHG, const string& maVB,
+                    PhieuHangDoi& out, string& msg);
 
+    bool callNext(const string& maQuay, PhieuHangDoi& out, string& msg);      // UC10
+    bool getServing(const string& maQuay, PhieuHangDoi& out);                 // phiếu có đủ navigation
     int countWaiting(const string& maQuay);
-
-    bool findQuayByUsername(const string& username, Quay& out);
 };
 
 #endif

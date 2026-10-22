@@ -1,17 +1,15 @@
 #ifndef AUTHSERVICE_H
 #define AUTHSERVICE_H
 
-#include "../data/Repositories.h"
+#include "../orm/DbContext.h"
 
 class AuthService
 {
 private:
-    TaiKhoanRepo& repo;
+    DbContext& db;
 
 public:
-    AuthService(TaiKhoanRepo& r);
-
-    // Đăng nhập: tra cứu TaiKhoan.txt
+    AuthService(DbContext& db);
     bool login(const string& username, const string& password, TaiKhoan& out);
 };
 

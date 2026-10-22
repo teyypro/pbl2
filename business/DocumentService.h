@@ -1,22 +1,18 @@
 #ifndef DOCUMENTSERVICE_H
 #define DOCUMENTSERVICE_H
 
-#include "../data/Repositories.h"
+#include "../orm/DbContext.h"
 
 class DocumentService
 {
 private:
-    PhongRepo& phongRepo;
-    VanBanRepo& vbRepo;
+    DbContext& db;
 
 public:
-    DocumentService(PhongRepo& p, VanBanRepo& v);
+    DocumentService(DbContext& db);
 
     MyList<Phong> getAllPhong();
-
     MyList<VanBan> getVanBanByPhong(const string& maPHG);
-
-    bool findPhongByUsername(const string& username, Phong& out);
 };
 
 #endif

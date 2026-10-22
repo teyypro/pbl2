@@ -1,30 +1,26 @@
 #ifndef APPCONTEXT_H
 #define APPCONTEXT_H
 
+#include "../orm/DbContext.h"
 #include "AuthService.h"
 #include "DocumentService.h"
 #include "RegistrationService.h"
 #include "DashboardService.h"
 #include "QueueService.h"
 
-// Gom toàn bộ repository + service (thứ tự khai báo = thứ tự khởi tạo)
-struct AppContext
+// Gom DbContext + các service để truyền cho tầng Presentation
+// (thứ tự khai báo = thứ tự khởi tạo)
+class AppContext
 {
-    TaiKhoanRepo taiKhoanRepo;
-    SinhVienRepo sinhVienRepo;
-    PhongRepo phongRepo;
-    QuayRepo quayRepo;
-    VanBanRepo vanBanRepo;
-    DangKyRepo dangKyRepo;
-    PhieuRepo phieuRepo;
-
+public:
+    DbContext db;
     AuthService auth;
     DocumentService doc;
     RegistrationService reg;
     DashboardService dash;
     QueueService queue;
 
-    AppContext();
+    AppContext(const string& dataFolder);
 };
 
 #endif

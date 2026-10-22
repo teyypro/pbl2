@@ -1,11 +1,22 @@
 #include "DepartmentUI.h"
+#include <iostream>
+
+Department::Department(const TaiKhoan& a, AppContext& c) : User(a), ctx(c), ok(false)
+{
+    Phong* p = account.phong.get();                 // Navigation 1-1: TaiKhoan -> Phong
+    if (p != NULL)
+    {
+        phong = *p;
+        ok = true;
+    }
+}
 
 void Department::listWithIndex(MyList<DangKy>& ds)
 {
     for (int i = 0; i < ds.getSize(); i++)
     {
         cout << i + 1 << ". ";
-        printDangKy(ctx.reg, ds[i]);
+        printDangKy(ds[i]);
     }
 }
 
@@ -18,6 +29,7 @@ void Department::xemChoDuyet()
     pauseScreen();
 }
 
+// UC03
 void Department::duyetHoSo()
 {
     MyList<DangKy> ds = ctx.reg.getPending(phong.getMaPHG());
@@ -32,10 +44,11 @@ void Department::duyetHoSo()
     for (int k = 0; k < sel.getSize(); k++)
     {
         const DangKy& d = ds[sel[k]];
-        cout << "\n--- Đơn " << d.getMaDK() << " (" << ctx.reg.tenVanBan(d.getMaVB())
+        cout << "\n--- Đơn " << d.getMaDK() << " (" << d.tenVanBan()
              << ", MSSV " << d.getMaSV() << ") ---\n";
         cout << "1. Đồng ý\n2. Từ chối\n";
         int c = readInt("Chọn: ");
+
         string msg;
         if (c == 1)
         {
@@ -56,16 +69,17 @@ void Department::duyetHoSo()
     pauseScreen();
 }
 
+// UC04
 void Department::xuatDanhSachIn()
 {
-    string path = DATA_DIR + "PrintList.txt";
-    int n = ctx.reg.exportPrintList(phong.getMaPHG(), path);
-    if (n < 0) cout << "Không ghi được file " << path << endl;
+    int n = ctx.reg.exportPrintList(phong.getMaPHG());
+    if (n < 0) cout << "Không ghi được file PrintList.txt\n";
     else if (n == 0) cout << "Không có hồ sơ nào cần in.\n";
-    else cout << "Đã xuất " << n << " hồ sơ ra file " << path << endl;
+    else cout << "Đã xuất " << n << " hồ sơ ra file PrintList.txt (thư mục data).\n";
     pauseScreen();
 }
 
+// UC05 + UC06: ngày in / ngày nhận = thời điểm bấm cập nhật (không cần nhập)
 void Department::capNhatNgay(bool ngayIn)
 {
     MyList<DangKy> ds = ngayIn ? ctx.reg.getForPrint(phong.getMaPHG())
@@ -73,7 +87,8 @@ void Department::capNhatNgay(bool ngayIn)
     cout << (ngayIn ? "\n=== CẬP NHẬT NGÀY IN ===\n" : "\n=== CẬP NHẬT NGÀY NHẬN ===\n");
     if (ds.isEmpty())
     {
-        cout << (ngayIn ? "Không có hồ sơ nào đang chờ in.\n" : "Không có hồ sơ nào đã in để cập nhật ngày nhận.\n");
+        cout << (ngayIn ? "Không có hồ sơ nào đang chờ in.\n"
+                        : "Không có hồ sơ nào đã in để cập nhật ngày nhận.\n");
         pauseScreen();
         return;
     }
@@ -83,20 +98,17 @@ void Department::capNhatNgay(bool ngayIn)
     MyList<int> sel = parseSelection(line, ds.getSize());
     if (sel.isEmpty()) { cout << "Không có hồ sơ nào được chọn.\n"; pauseScreen(); return; }
 
-    string date = readLine("Nhập ngày (dd/mm/yyyy): ");
+    // Thời điểm chọn cập nhật: lấy một lần cho cả lượt chọn
+    string thoiGian = nowDateTime();
+    cout << "\nThời điểm cập nhật: " << thoiGian << endl;
     for (int k = 0; k < sel.getSize(); k++)
     {
         string msg;
-        if (ngayIn) ctx.reg.setNgayIn(ds[sel[k]].getMaDK(), date, msg);
-        else ctx.reg.setNgayNhan(ds[sel[k]].getMaDK(), date, msg);
+        if (ngayIn) ctx.reg.setNgayIn(ds[sel[k]].getMaDK(), thoiGian, msg);
+        else ctx.reg.setNgayNhan(ds[sel[k]].getMaDK(), thoiGian, msg);
         cout << msg << endl;
     }
     pauseScreen();
-}
-
-Department::Department(const TaiKhoan& a, AppContext& c)
-    : User(a), ctx(c), ok(ctx.doc.findPhongByUsername(a.getUsername(), phong))
-{
 }
 
 void Department::showMenu()

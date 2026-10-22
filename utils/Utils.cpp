@@ -1,5 +1,40 @@
 #include "Utils.h"
+#include <iostream>
+#include <sstream>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 
+#ifdef _WIN32
+#include <conio.h>
+#include <windows.h>
+#else
+#include <sys/select.h>
+#include <unistd.h>
+#endif
+
+namespace
+{
+    long daysFromCivil(int y, int m, int d)
+    {
+        y -= (m <= 2);
+        long era = (y >= 0 ? y : y - 399) / 400;
+        unsigned yoe = (unsigned)(y - era * 400);
+        unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+        unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+        return era * 146097 + (long)doe - 719468;
+    }
+
+    bool isValidDate(int d, int m, int y)
+    {
+        if (m < 1 || m > 12 || d < 1 || y < 2000 || y > 2100) return false;
+        int dm[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+        bool leap = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
+        return d <= dm[m - 1] + ((m == 2 && leap) ? 1 : 0);
+    }
+}
+
+// ---------- Chuỗi ----------
 MyList<string> split(const string& s, char delim)
 {
     MyList<string> r;
@@ -43,25 +78,7 @@ int toInt(const string& s, int def)
     return atoi(s.c_str());
 }
 
-long daysFromCivil(int y, int m, int d)
-{
-    y -= (m <= 2);
-    long era = (y >= 0 ? y : y - 399) / 400;
-    unsigned yoe = (unsigned)(y - era * 400);
-    unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
-    unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    return era * 146097 + (long)doe - 719468;
-}
-
-bool isValidDate(int d, int m, int y)
-{
-    if (m < 1 || m > 12 || d < 1 || y < 2000 || y > 2100) return false;
-    int dm[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    bool leap = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
-    int maxDay = dm[m - 1] + ((m == 2 && leap) ? 1 : 0);
-    return d <= maxDay;
-}
-
+// ---------- Ngày tháng ----------
 bool normalizeDate(string& s)
 {
     int d, m, y;
@@ -90,6 +107,26 @@ string today()
     return string(buf);
 }
 
+string nowDateTime()
+{
+    time_t t = time(0);
+    tm* l = localtime(&t);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%02d/%02d/%04d %02d:%02d:%02d",
+             l->tm_mday, l->tm_mon + 1, l->tm_year + 1900, l->tm_hour, l->tm_min, l->tm_sec);
+    return string(buf);
+}
+
+// Chấp nhận cả "dd/mm/yyyy" (giờ = 00:00:00) lẫn "dd/mm/yyyy HH:MM:SS"
+long long dateTimeToSeconds(const string& s)
+{
+    int d, m, y, h = 0, mi = 0, sec = 0;
+    int n = sscanf(s.c_str(), "%d/%d/%d %d:%d:%d", &d, &m, &y, &h, &mi, &sec);
+    if (n < 3) return -1;
+    return (long long)daysFromCivil(y, m, d) * 86400LL + h * 3600 + mi * 60 + sec;
+}
+
+// ---------- Nhập xuất ----------
 string readLine(const string& prompt)
 {
     cout << prompt;
@@ -103,7 +140,7 @@ int readInt(const string& prompt)
     while (true)
     {
         string s = readLine(prompt);
-        if (!s.empty() && toInt(s, -1) != -1) return atoi(s.c_str());
+        if (toInt(s, -1) != -1) return atoi(s.c_str());
         cout << "Vui lòng nhập một số nguyên không âm.\n";
     }
 }
@@ -138,7 +175,6 @@ MyList<int> parseSelection(const string& line, int maxIdx)
 }
 
 #ifdef _WIN32
-
 bool waitKey(int ms)
 {
     int t = 0;
@@ -150,9 +186,7 @@ bool waitKey(int ms)
     }
     return false;
 }
-
 #else
-
 bool waitKey(int ms)
 {
     fd_set fds;
@@ -161,8 +195,7 @@ bool waitKey(int ms)
     timeval tv;
     tv.tv_sec = ms / 1000;
     tv.tv_usec = (ms % 1000) * 1000;
-    int r = select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv);
-    if (r > 0)
+    if (select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0)
     {
         string tmp;
         getline(cin, tmp);
@@ -170,5 +203,4 @@ bool waitKey(int ms)
     }
     return false;
 }
-
 #endif

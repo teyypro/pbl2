@@ -1,119 +1,174 @@
 #include "QueueService.h"
+#include "../templates/MyQueue.h"
 
-int QueueService::countWaitingNoLoad(const string& maQuay)
+QueueService::QueueService(DbContext& d, DashboardService& ds) : db(d), dash(ds) {}
+
+bool QueueService::getQuay(const string& maQuay, Quay& out)
 {
+    return db.quay.findByKey(maQuay, out);
+}
+
+// Navigation 1-N: Quay -> các PhieuHangDoi của quầy
+MyList<PhieuHangDoi> QueueService::ticketsOf(const string& maQuay)
+{
+    MyList<PhieuHangDoi> result;
+    Quay q;
+    if (db.quay.findByKey(maQuay, q)) result = q.phieus.items();
+    return result;
+}
+
+int QueueService::countWaiting(const string& maQuay)
+{
+    MyList<PhieuHangDoi> list = ticketsOf(maQuay);
     int c = 0;
-    const MyList<PhieuHangDoi>& tk = phieuRepo.getAll();
-    for (int i = 0; i < tk.getSize(); i++)
-        if (tk[i].getMaQuay() == maQuay && tk[i].getTrangThai() == Q_WAITING) c++;
+    for (int i = 0; i < list.getSize(); i++)
+        if (list[i].getTrangThai() == Q_WAITING) c++;
     return c;
 }
 
-QueueService::QueueService(PhieuRepo& p, QuayRepo& q, SinhVienRepo& s, DashboardService& d)
-    : phieuRepo(p), quayRepo(q), svRepo(s), dash(d) {}
-
-bool QueueService::takeTicket(const string& maSV, PhieuHangDoi& out, string& msg)
+bool QueueService::canTakeTicket(const string& maSV, string& msg)
 {
-    svRepo.load();
-    quayRepo.load();
-    phieuRepo.load();
-
     SinhVien sv;
-    if (!svRepo.findByKey(maSV, sv)) { msg = "MSSV không tồn tại."; return false; }
+    if (!db.sinhVien.findByKey(maSV, sv)) { msg = "MSSV không tồn tại."; return false; }
 
-    const MyList<PhieuHangDoi>& tk = phieuRepo.getAll();
-    int mx = 0;
-    for (int i = 0; i < tk.getSize(); i++)
+    const MyList<PhieuHangDoi>& mine = sv.phieus.items();    // Navigation 1-N: phiếu của sinh viên
+    for (int i = 0; i < mine.getSize(); i++)
     {
-        if (tk[i].getSoThuTu() > mx) mx = tk[i].getSoThuTu();
-        if (tk[i].getMaSV() == maSV && tk[i].getTrangThai() == Q_WAITING)
+        if (mine[i].getTrangThai() == Q_WAITING)
         {
-            out = tk[i];
-            msg = "Bạn đang có số " + tk[i].getDisplay() + " chờ tại quầy " + tk[i].getMaQuay() + ".";
+            msg = "Bạn đang có số " + mine[i].getDisplay() + " chờ tại quầy " + mine[i].getMaQuay() + ".";
             return false;
         }
     }
-
-    string best = "";
-    int bestCnt = 0;
-    const MyList<Quay>& qs = quayRepo.getAll();
-    for (int i = 0; i < qs.getSize(); i++)
-    {
-        if (!qs[i].isActive()) continue;
-        int c = countWaitingNoLoad(qs[i].getMaQuay());
-        if (best.empty() || c < bestCnt) { best = qs[i].getMaQuay(); bestCnt = c; }
-    }
-    if (best.empty()) { msg = "Hiện không có quầy nào đang hoạt động."; return false; }
-
-    PhieuHangDoi p("T" + pad(mx + 1, 4), mx + 1, maSV, best, Q_WAITING);
-    phieuRepo.add(p);
-    out = p;
     return true;
 }
 
-bool QueueService::callNext(const string& maQuay, PhieuHangDoi& out, string& msg)
+// UC07 + UC08: chọn phòng + nội dung (giấy tờ / tư vấn) -> gán vào quầy đang hoạt động
+// của PHÒNG đó có ít người chờ nhất
+bool QueueService::takeTicket(const string& maSV, const string& maPHG, const string& maVB,
+                              PhieuHangDoi& out, string& msg)
 {
-    phieuRepo.load();
-    const MyList<PhieuHangDoi>& tk = phieuRepo.getAll();
+    if (!canTakeTicket(maSV, msg)) return false;
 
-    // Dựng MyQueue từ các phiếu WAITING của quầy (theo thứ tự số tăng dần)
-    MyQueue<PhieuHangDoi> q;
-    for (int i = 0; i < tk.getSize(); i++)
-        if (tk[i].getMaQuay() == maQuay && tk[i].getTrangThai() == Q_WAITING) q.enqueue(tk[i]);
+    Phong ph;
+    if (!db.phong.findByKey(maPHG, ph, false)) { msg = "Phòng không tồn tại."; return false; }
 
-    if (q.isEmpty())
+    // Nội dung: "Tư vấn" hoặc một văn bản thuộc đúng phòng đã chọn
+    string request = REQ_CONSULT;
+    if (maVB != REQ_CONSULT)
     {
-        msg = "Hàng đợi của quầy " + maQuay + " đang trống.";
+        VanBan vb;
+        if (!db.vanBan.findByKey(maVB, vb, false) || vb.getMaPHG() != maPHG)
+        {
+            msg = "Giấy tờ không thuộc phòng đã chọn.";
+            return false;
+        }
+        request = maVB;
+    }
+
+    // Chỉ xét các quầy của phòng này đang hoạt động
+    MyList<Quay> all = db.quay.findBy("maPHG", maPHG, false);
+    MyList<Quay> active;
+    for (int i = 0; i < all.getSize(); i++)
+        if (all[i].isActive()) active.add(all[i]);
+
+    if (active.isEmpty())
+    {
+        msg = "Hiện " + ph.getTenPhong() + " không có quầy nào đang hoạt động.";
         return false;
     }
 
-    for (int i = 0; i < tk.getSize(); i++)
+    int best = 0;
+    int bestCount = countWaiting(active[0].getMaQuay());
+    for (int i = 1; i < active.getSize(); i++)
     {
-        if (tk[i].getMaQuay() == maQuay && tk[i].getTrangThai() == Q_SERVING)
+        int c = countWaiting(active[i].getMaQuay());
+        if (c < bestCount) { best = i; bestCount = c; }
+    }
+
+    string id = db.phieu.nextId("T", 4);                      // T0001, T0002, ...
+    PhieuHangDoi p(id, toInt(id.substr(1)), maSV, active[best].getMaQuay(), Q_WAITING, request);
+    db.phieu.add(p);
+
+    if (!db.phieu.findByKey(id, out)) out = p;                // nạp lại để có navigation vanBan
+    dash.refresh();
+    return true;
+}
+
+// UC10: quầy gọi số tiếp theo (WAITING -> SERVING); phiếu SERVING trước đó -> FINISHED
+// Nếu không còn ai chờ: kết thúc luôn phiếu đang SERVING hiện tại (nếu có) và báo trống.
+bool QueueService::callNext(const string& maQuay, PhieuHangDoi& out, string& msg)
+{
+    MyList<PhieuHangDoi> list = ticketsOf(maQuay);
+
+    // Phiếu WAITING vào hàng đợi theo thứ tự số thứ tự tăng dần
+    MyList<PhieuHangDoi> waiting;
+    for (int i = 0; i < list.getSize(); i++)
+        if (list[i].getTrangThai() == Q_WAITING) waiting.add(list[i]);
+    for (int a = 0; a < waiting.getSize(); a++)
+        for (int b = a + 1; b < waiting.getSize(); b++)
+            if (waiting[b].getSoThuTu() < waiting[a].getSoThuTu())
+            {
+                PhieuHangDoi tmp = waiting[a]; waiting[a] = waiting[b]; waiting[b] = tmp;
+            }
+
+    MyQueue<PhieuHangDoi> q;                                  // hàng đợi của quầy
+    for (int i = 0; i < waiting.getSize(); i++) q.enqueue(waiting[i]);
+
+    // Trường hợp 1: không còn ai chờ
+    if (q.isEmpty())
+    {
+        bool hadServing = false;
+        for (int i = 0; i < list.getSize(); i++)
         {
-            PhieuHangDoi old = tk[i];
+            if (list[i].getTrangThai() == Q_SERVING)
+            {
+                PhieuHangDoi old = list[i];
+                old.setTrangThai(Q_FINISHED);
+                db.phieu.update(old);
+                hadServing = true;
+            }
+        }
+
+        dash.refresh();
+        msg = hadServing
+            ? "Hàng đợi của quầy " + maQuay + " đã hết. Đã kết thúc phiếu đang phục vụ."
+            : "Hàng đợi của quầy " + maQuay + " đang trống.";
+        return false;
+    }
+
+    // Trường hợp 2: có người chờ -> phiếu SERVING cũ chuyển FINISHED
+    for (int i = 0; i < list.getSize(); i++)
+    {
+        if (list[i].getTrangThai() == Q_SERVING)
+        {
+            PhieuHangDoi old = list[i];
             old.setTrangThai(Q_FINISHED);
-            phieuRepo.update(old);
+            db.phieu.update(old);
         }
     }
 
     PhieuHangDoi next = q.peek();
     q.dequeue();
     next.setTrangThai(Q_SERVING);
-    phieuRepo.update(next);
+    db.phieu.update(next);
+
     dash.refresh();
-    out = next;
+    if (!db.phieu.findByKey(next.getMaPhieu(), out)) out = next;   // có navigation vanBan
     return true;
 }
 
 bool QueueService::getServing(const string& maQuay, PhieuHangDoi& out)
 {
-    phieuRepo.load();
-    const MyList<PhieuHangDoi>& tk = phieuRepo.getAll();
-    for (int i = 0; i < tk.getSize(); i++)
+    MyList<PhieuHangDoi> list = ticketsOf(maQuay);
+    for (int i = 0; i < list.getSize(); i++)
     {
-        if (tk[i].getMaQuay() == maQuay && tk[i].getTrangThai() == Q_SERVING)
+        if (list[i].getTrangThai() == Q_SERVING)
         {
-            out = tk[i];
+            // phần tử của Collection không có navigation -> nạp lại từ DbSet
+            if (!db.phieu.findByKey(list[i].getMaPhieu(), out)) out = list[i];
             return true;
         }
-    }
-    return false;
-}
-
-int QueueService::countWaiting(const string& maQuay)
-{
-    phieuRepo.load();
-    return countWaitingNoLoad(maQuay);
-}
-
-bool QueueService::findQuayByUsername(const string& username, Quay& out)
-{
-    quayRepo.load();
-    const MyList<Quay>& qs = quayRepo.getAll();
-    for (int i = 0; i < qs.getSize(); i++)
-    {
-        if (qs[i].getUsername() == username) { out = qs[i]; return true; }
     }
     return false;
 }

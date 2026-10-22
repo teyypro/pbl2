@@ -11,19 +11,13 @@ private:
     bool ok;
 
     void listWithIndex(MyList<DangKy>& ds);
-
     void xemChoDuyet();
-
     void duyetHoSo();
-
     void xuatDanhSachIn();
-
-    // ngayIn = true: cập nhật ngày in; false: cập nhật ngày nhận
-    void capNhatNgay(bool ngayIn);
+    void capNhatNgay(bool ngayIn);      // true: ngày in, false: ngày nhận
 
 public:
     Department(const TaiKhoan& a, AppContext& c);
-
     void showMenu();
 };
 

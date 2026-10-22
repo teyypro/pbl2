@@ -1,68 +1,30 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <iostream>
 #include <string>
-#include <sstream>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
 #include "../templates/MyList.h"
-
-#ifdef _WIN32
-#include <conio.h>
-#include <windows.h>
-#else
-#include <sys/select.h>
-#include <unistd.h>
-#endif
-
 using namespace std;
 
 // ---------- Chuỗi ----------
-// Tách chuỗi theo ký tự phân cách, GIỮ các trường rỗng
-MyList<string> split(const string& s, char delim);
-
+MyList<string> split(const string& s, char delim);   // giữ các trường rỗng
 string trim(const string& s);
-
 string toUpper(string s);
+string pad(int n, int width);                        // pad(5,3) -> "005"
+int toInt(const string& s, int def = 0);            // sai định dạng -> def
 
-// Đệm số 0 phía trước: pad(5,3) -> "005"
-string pad(int n, int width);
+// ---------- Ngày tháng (dd/mm/yyyy) / thời gian (dd/mm/yyyy HH:MM:SS) ----------
+bool normalizeDate(string& s);                       // kiểm tra + chuẩn hóa
+long dateToDays(const string& s);                    // số ngày từ 1/1/1970, -1 nếu sai
+string today();                                      // dd/mm/yyyy
+string nowDateTime();                                // dd/mm/yyyy HH:MM:SS (thời điểm hiện tại)
+long long dateTimeToSeconds(const string& s);        // "dd/mm/yyyy[ HH:MM:SS]" -> giây từ 1/1/1970, -1 nếu sai
 
-// Chuyển chuỗi toàn chữ số thành int, sai định dạng trả về def
-int toInt(const string& s, int def = 0);
-
-// ---------- Ngày tháng (dd/mm/yyyy) ----------
-long daysFromCivil(int y, int m, int d);
-
-bool isValidDate(int d, int m, int y);
-
-// Kiểm tra và chuẩn hóa về dd/mm/yyyy
-bool normalizeDate(string& s);
-
-// Số ngày kể từ 1/1/1970; trả về -1 nếu chuỗi không hợp lệ
-long dateToDays(const string& s);
-
-string today();
-
-// ---------- Nhập xuất ----------
+// ---------- Nhập xuất console ----------
 string readLine(const string& prompt);
-
 int readInt(const string& prompt);
-
 void pauseScreen();
-
 void clearScreen();
-
-// Phân tích danh sách chọn "1 2 4" hoặc "ALL" -> danh sách chỉ số (0-based)
-MyList<int> parseSelection(const string& line, int maxIdx);
-
-// Chờ tối đa ms mili-giây; trả về true nếu người dùng bấm phím (Enter) để thoát
-#ifdef _WIN32
-bool waitKey(int ms);
-#else
-bool waitKey(int ms);
-#endif
+MyList<int> parseSelection(const string& line, int maxIdx);  // "1 2 4" hoặc "ALL" -> chỉ số 0-based
+bool waitKey(int ms);                                // chờ ms; true nếu người dùng bấm Enter
 
 #endif
