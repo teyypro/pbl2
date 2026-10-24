@@ -1,78 +1,65 @@
 #ifndef NAVIGATION_H
 #define NAVIGATION_H
 
+#include <cstddef>
 #include <string>
 #include "../templates/MyList.h"
 using namespace std;
 
-// Khai báo trước; định nghĩa đầy đủ trong DbSet.h
-template<class T> class DbSet;
-
 // =====================================================================
 // Reference<T>: Navigation Property trỏ tới MỘT đối tượng (N-1 hoặc 1-1).
-// Đối tượng liên quan được nạp ngay khi gọi load() (eager loading).
+// KHÔNG sở hữu đối tượng: chỉ giữ con trỏ tới đối tượng nằm trong DbSet (RAM).
 // =====================================================================
 template<class T>
 class Reference
 {
 private:
-    T* value;                   // đối tượng liên quan, NULL nếu không có
-
-    void clear() { delete value; value = NULL; }
+    T* value;
 
 public:
     Reference() : value(NULL) {}
-    Reference(const Reference& o) : value(o.value != NULL ? new T(*o.value) : NULL) {}
-    Reference& operator=(const Reference& o)
-    {
-        if (this != &o)
-        {
-            clear();
-            if (o.value != NULL) value = new T(*o.value);
-        }
-        return *this;
-    }
-    ~Reference() { delete value; }
 
-    // Nạp đối tượng liên quan, tìm theo KHÓA CHÍNH của T
-    void load(DbSet<T>* set, const string& keyValue)
-    {
-        clear();
-        T found;
-        if (set != NULL && set->findByKey(keyValue, found, false)) value = new T(found);
-    }
-
-    // Nạp đối tượng liên quan, tìm theo một cột bất kỳ (dùng cho 1-1 chiều ngược)
-    void load(DbSet<T>* set, const string& column, const string& columnValue)
-    {
-        clear();
-        T found;
-        if (set != NULL && set->findOneBy(column, columnValue, found, false)) value = new T(found);
-    }
+    void set(T* p) { value = p; }
+    void clear() { value = NULL; }
 
     T* get() const { return value; }              // NULL nếu không có
-    T* operator->() const { return value; }       // chú ý: kiểm tra hasValue() nếu có thể NULL
+    T* operator->() const { return value; }       // kiểm tra hasValue() nếu có thể NULL
     bool hasValue() const { return value != NULL; }
 };
 
 // =====================================================================
 // Collection<T>: Navigation Property trỏ tới NHIỀU đối tượng (1-N).
+// KHÔNG sở hữu các đối tượng. Không chứa trùng con trỏ.
 // =====================================================================
 template<class T>
 class Collection
 {
 private:
-    MyList<T> list;
+    MyList<T*> list;
 
 public:
-    // Nạp các đối tượng T có cột `column` bằng `columnValue`
-    void load(DbSet<T>* set, const string& column, const string& columnValue)
+    int indexOf(T* p) const
     {
-        list.clear();
-        if (set != NULL) list = set->findBy(column, columnValue, false);
+        for (int i = 0; i < list.getSize(); i++)
+            if (list[i] == p) return i;
+        return -1;
     }
 
-    const MyList<T>& items() const { return list; }
+    void add(T* p)
+    {
+        if (p != NULL && indexOf(p) < 0) list.add(p);
+    }
+
+    void remove(T* p)
+    {
+        int i = indexOf(p);
+        if (i >= 0) list.remove(i);
+    }
+
+    bool contains(T* p) const { return indexOf(p) >= 0; }
+    void clear() { list.clear(); }
+
+    const MyList<T*>& items() const { return list; }
     int count() const { return list.getSize(); }
 };
 

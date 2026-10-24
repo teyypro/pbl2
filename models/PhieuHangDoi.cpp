@@ -18,7 +18,7 @@ string PhieuHangDoi::tenYeuCau() const
     if (isConsult()) return "Tư vấn";
     VanBan* vb = vanBan.get();
     if (vb != NULL) return vb->getTenVB();
-    return maVB;                                         // chưa nạp quan hệ hoặc không tìm thấy
+    return maVB;                                         // không tìm thấy văn bản
 }
 
 string PhieuHangDoi::tableName() const { return "PhieuHangDoi"; }
@@ -47,9 +47,39 @@ void PhieuHangDoi::fromRow(const Row& r)
     maVB = r[5];
 }
 
-void PhieuHangDoi::loadRelations(DbContext* ctx)
+void PhieuHangDoi::linkRelations(DbContext* ctx)
 {
-    sinhVien.load(&ctx->sinhVien, maSV);                 // N-1
-    quay.load(&ctx->quay, maQuay);                       // N-1
-    if (!isConsult()) vanBan.load(&ctx->vanBan, maVB);   // N-1 (tư vấn thì không có văn bản)
+    SinhVien* sv = ctx->sinhVien.findByKey(maSV);        // N-1
+    if (sv != NULL)
+    {
+        sinhVien.set(sv);
+        sv->phieus.add(this);                            // chiều ngược lại: SinhVien.phieus
+    }
+
+    Quay* q = ctx->quay.findByKey(maQuay);               // N-1
+    if (q != NULL)
+    {
+        quay.set(q);
+        q->phieus.add(this);                             // chiều ngược lại: Quay.phieus
+    }
+
+    if (!isConsult())                                    // tư vấn thì không có văn bản
+    {
+        VanBan* vb = ctx->vanBan.findByKey(maVB);        // N-1
+        if (vb != NULL)
+        {
+            vanBan.set(vb);
+            vb->phieus.add(this);                        // chiều ngược lại: VanBan.phieus
+        }
+    }
+}
+
+void PhieuHangDoi::unlinkRelations()
+{
+    if (sinhVien.hasValue()) sinhVien->phieus.remove(this);
+    if (quay.hasValue())     quay->phieus.remove(this);
+    if (vanBan.hasValue())   vanBan->phieus.remove(this);
+    sinhVien.clear();
+    quay.clear();
+    vanBan.clear();
 }

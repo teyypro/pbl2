@@ -26,10 +26,13 @@ void TaiKhoan::fromRow(const Row& r)
     role = r[2];
 }
 
-// Quan hệ 1-1 (chiều ngược): khóa ngoại nằm ở bảng kia (cột username)
-void TaiKhoan::loadRelations(DbContext* ctx)
+// Xóa tài khoản: các đối tượng trỏ tới nó không còn tài khoản
+void TaiKhoan::unlinkRelations()
 {
-    sinhVien.load(&ctx->sinhVien, "username", username);
-    phong.load(&ctx->phong, "username", username);
-    quay.load(&ctx->quay, "username", username);
+    if (sinhVien.hasValue()) sinhVien->taiKhoan.clear();
+    if (phong.hasValue())    phong->taiKhoan.clear();
+    if (quay.hasValue())     quay->taiKhoan.clear();
+    sinhVien.clear();
+    phong.clear();
+    quay.clear();
 }

@@ -7,17 +7,17 @@ class Department : public User
 {
 private:
     AppContext& ctx;
-    Phong phong;
+    Phong* phong;                       // phòng của tài khoản (đối tượng trên RAM)
     bool ok;
 
-    void listWithIndex(MyList<DangKy>& ds);
+    void listWithIndex(MyList<DangKy*>& ds);
     void xemChoDuyet();
     void duyetHoSo();
     void xuatDanhSachIn();
     void capNhatNgay(bool ngayIn);      // true: ngày in, false: ngày nhận
 
 public:
-    Department(const TaiKhoan& a, AppContext& c);
+    Department(TaiKhoan* a, AppContext& c);
     void showMenu();
 };
 

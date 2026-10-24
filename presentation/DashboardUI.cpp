@@ -5,7 +5,7 @@ void DashboardUI::run(AppContext& ctx)
 {
     while (true)
     {
-        ctx.dash.refresh();
+        // Reload từ FILE mỗi 3 giây (không dùng RAM, không ghi đè file)
         MyList<CounterDisplay> ds = ctx.dash.readCurrent();
 
         clearScreen();

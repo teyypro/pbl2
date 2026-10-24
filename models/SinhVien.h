@@ -2,9 +2,7 @@
 #define SINHVIEN_H
 
 #include "Nguoi.h"
-#include "../orm/Navigation.h"
 
-class TaiKhoan;
 class DangKy;
 class PhieuHangDoi;
 
@@ -14,10 +12,10 @@ private:
     string maSV;
 
 public:
-    // ----- Navigation Property -----
-    Reference<TaiKhoan>      taiKhoan;     // 1-1: tài khoản đăng nhập
-    Collection<DangKy>       dangKys;      // 1-N: các hồ sơ đã đăng ký
-    Collection<PhieuHangDoi> phieus;       // 1-N: các phiếu hàng đợi
+    // ----- Quan hệ (hai chiều) -----
+    // (taiKhoan: ASSOCIATION 1-1, kế thừa từ Nguoi)
+    Collection<DangKy>       dangKys;      // COMPOSITION 1-N: xóa sinh viên -> xóa hồ sơ
+    Collection<PhieuHangDoi> phieus;       // ASSOCIATION 1-N: phiếu sinh viên đã lấy
 
     SinhVien();
     SinhVien(const string& maSV, const string& username);
@@ -29,7 +27,10 @@ public:
     Row columns() const;
     Row toRow() const;
     void fromRow(const Row& row);
-    void loadRelations(DbContext* ctx);
+    string getKey() const { return maSV; }
+    void linkRelations(DbContext* ctx);
+    void unlinkRelations();
+    void removeChildren(DbContext* ctx);
 };
 
 #endif

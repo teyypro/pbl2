@@ -1,21 +1,16 @@
 #include "CounterUI.h"
 #include <iostream>
 
-Counter::Counter(const TaiKhoan& a, AppContext& c) : User(a), ctx(c), ok(false)
+Counter::Counter(TaiKhoan* a, AppContext& c) : User(a), ctx(c), quay(NULL), ok(false)
 {
-    Quay* q = account.quay.get();                   // Navigation 1-1: TaiKhoan -> Quay
-    if (q != NULL)
-    {
-        // Quay lấy qua navigation chỉ là bản đơn giản (nạp 1 cấp).
-        // Lấy lại từ DbSet để có đủ quan hệ (phong, phieus).
-        ok = ctx.queue.getQuay(q->getMaQuay(), quay);
-    }
+    quay = account->quay.get();                     // Navigation 1-1: TaiKhoan -> Quay (đủ quan hệ phong, phieus)
+    ok = (quay != NULL);
 }
 
 // Hiển thị toàn bộ hồ sơ của một sinh viên (dùng cho option 2: tra cứu theo MSSV)
 void Counter::hienThiHoSoSV(const string& maSV)
 {
-    MyList<DangKy> ds = ctx.reg.getBySinhVien(maSV);
+    MyList<DangKy*> ds = ctx.reg.getBySinhVien(maSV);
     cout << "\n--- Thông tin sinh viên MSSV " << maSV << " ---\n";
     if (ds.isEmpty()) cout << "Sinh viên chưa có hồ sơ nào.\n";
     for (int i = 0; i < ds.getSize(); i++)
@@ -28,17 +23,17 @@ void Counter::hienThiHoSoSV(const string& maSV)
 // UC10 + UC11: gọi số, chỉ hiển thị yêu cầu của tờ số sinh viên đã lấy (giấy tờ / tư vấn)
 void Counter::goiSoTiepTheo()
 {
-    PhieuHangDoi p;
+    PhieuHangDoi* p = NULL;
     string msg;
-    if (!ctx.queue.callNext(quay.getMaQuay(), p, msg))
+    if (!ctx.queue.callNext(quay, p, msg))
     {
         cout << msg << endl;
         pauseScreen();
         return;
     }
-    cout << "\n>>> MỜI SỐ " << p.getDisplay() << " ĐẾN QUẦY " << quay.getMaQuay() << " <<<\n";
-    cout << "    MSSV    : " << p.getMaSV() << endl;
-    cout << "    Yêu cầu : " << p.tenYeuCau() << endl;
+    cout << "\n>>> MỜI SỐ " << p->getDisplay() << " ĐẾN QUẦY " << quay->getMaQuay() << " <<<\n";
+    cout << "    MSSV    : " << p->getMaSV() << endl;
+    cout << "    Yêu cầu : " << p->tenYeuCau() << endl;
     pauseScreen();
 }
 
@@ -47,14 +42,14 @@ void Counter::xemHoSo()
     string maSV = readLine("Nhập MSSV (Enter = sinh viên đang phục vụ): ");
     if (maSV.empty())
     {
-        PhieuHangDoi cur;
-        if (!ctx.queue.getServing(quay.getMaQuay(), cur))
+        PhieuHangDoi* cur = quay->servingTicket();
+        if (cur == NULL)
         {
             cout << "Quầy chưa phục vụ sinh viên nào. Hãy gọi số trước.\n";
             pauseScreen();
             return;
         }
-        maSV = cur.getMaSV();
+        maSV = cur->getMaSV();
     }
     hienThiHoSoSV(maSV);
     pauseScreen();
@@ -63,8 +58,8 @@ void Counter::xemHoSo()
 // UC12: danh sách giấy cần xử lý trả hiển thị riêng ở đây
 void Counter::xacNhanTraGiay()
 {
-    PhieuHangDoi cur;
-    if (!ctx.queue.getServing(quay.getMaQuay(), cur))
+    PhieuHangDoi* cur = quay->servingTicket();
+    if (cur == NULL)
     {
         cout << "Quầy chưa phục vụ sinh viên nào. Hãy gọi số trước.\n";
         pauseScreen();
@@ -72,8 +67,8 @@ void Counter::xacNhanTraGiay()
     }
 
     // Giấy của sinh viên đang phục vụ, thuộc phòng của quầy, đã có ngày nhận, chưa trả
-    MyList<DangKy> ds = ctx.reg.getForReturn(cur.getMaSV(), quay.getMaPHG());
-    cout << "\n=== GIẤY CẦN TRẢ - MSSV " << cur.getMaSV() << " ===\n";
+    MyList<DangKy*> ds = ctx.reg.getForReturn(cur->getMaSV(), quay->getMaPHG());
+    cout << "\n=== GIẤY CẦN TRẢ - MSSV " << cur->getMaSV() << " ===\n";
     if (ds.isEmpty())
     {
         cout << "Sinh viên không có giấy nào cần trả tại phòng này.\n";
@@ -93,7 +88,7 @@ void Counter::xacNhanTraGiay()
     for (int k = 0; k < sel.getSize(); k++)
     {
         string msg;
-        ctx.reg.confirmReceive(ds[sel[k]].getMaDK(), cur.getMaSV(), msg);
+        ctx.reg.confirmReceive(ds[sel[k]]->getMaDK(), cur->getMaSV(), msg);
         cout << msg << endl;
     }
     pauseScreen();
@@ -110,23 +105,22 @@ void Counter::showMenu()
     while (true)
     {
         clearScreen();
-        PhieuHangDoi cur;
-        bool has = ctx.queue.getServing(quay.getMaQuay(), cur);
+        PhieuHangDoi* cur = quay->servingTicket();
 
-        Phong* ph = quay.phong.get();               // Navigation N-1: Quay -> Phong
-        cout << "====== QUẦY " << quay.getMaQuay();
+        Phong* ph = quay->phong.get();              // Navigation N-1: Quay -> Phong
+        cout << "====== QUẦY " << quay->getMaQuay();
         if (ph != NULL) cout << " (" << ph->getTenPhong() << ")";
         cout << " ======\n";
-        if (has)
+        if (cur != NULL)
         {
-            cout << "Đang phục vụ: " << cur.getDisplay() << " (MSSV " << cur.getMaSV() << ")\n";
-            cout << "Yêu cầu     : " << cur.tenYeuCau() << endl;
+            cout << "Đang phục vụ: " << cur->getDisplay() << " (MSSV " << cur->getMaSV() << ")\n";
+            cout << "Yêu cầu     : " << cur->tenYeuCau() << endl;
         }
         else
         {
             cout << "Đang phục vụ: ---\n";
         }
-        cout << "Đang chờ    : " << ctx.queue.countWaiting(quay.getMaQuay()) << " người\n\n";
+        cout << "Đang chờ    : " << quay->countWaiting() << " người\n\n";
         cout << "1. Gọi số tiếp theo\n";
         cout << "2. Xem hồ sơ sinh viên\n";
         cout << "3. Xác nhận trả giấy\n";

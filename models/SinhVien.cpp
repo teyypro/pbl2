@@ -23,9 +23,30 @@ void SinhVien::fromRow(const Row& r)
     username = r[1];
 }
 
-void SinhVien::loadRelations(DbContext* ctx)
+void SinhVien::linkRelations(DbContext* ctx)
 {
-    taiKhoan.load(&ctx->taiKhoan, username);             // 1-1: SinhVien.username -> TaiKhoan (khóa chính)
-    dangKys.load(&ctx->dangKy, "maSV", maSV);            // 1-N: DangKy.maSV == SinhVien.maSV
-    phieus.load(&ctx->phieu, "maSV", maSV);              // 1-N: PhieuHangDoi.maSV == SinhVien.maSV
+    TaiKhoan* t = ctx->taiKhoan.findByKey(username);     // 1-1: SinhVien.username -> TaiKhoan (khóa chính)
+    if (t != NULL)
+    {
+        taiKhoan.set(t);
+        t->sinhVien.set(this);                           // chiều ngược lại
+    }
+    // dangKys, phieus được các DangKy / PhieuHangDoi tự thêm vào khi chúng liên kết
+}
+
+void SinhVien::unlinkRelations()
+{
+    if (taiKhoan.hasValue()) taiKhoan->sinhVien.clear();
+    taiKhoan.clear();
+
+    // Association: phiếu vẫn tồn tại (thuộc quầy) nhưng không còn sinh viên
+    for (int i = 0; i < phieus.count(); i++) phieus.items()[i]->sinhVien.clear();
+    phieus.clear();
+}
+
+// Composition: hồ sơ không tồn tại độc lập khỏi sinh viên
+void SinhVien::removeChildren(DbContext* ctx)
+{
+    MyList<DangKy*> copy = dangKys.items();              // sao chép vì danh sách thay đổi khi xóa
+    for (int i = 0; i < copy.getSize(); i++) ctx->dangKy.remove(copy[i]->getKey());
 }

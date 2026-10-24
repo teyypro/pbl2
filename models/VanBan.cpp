@@ -26,8 +26,24 @@ void VanBan::fromRow(const Row& r)
     maPHG = r[2];
 }
 
-void VanBan::loadRelations(DbContext* ctx)
+void VanBan::linkRelations(DbContext* ctx)
 {
-    phong.load(&ctx->phong, maPHG);                      // N-1
-    dangKys.load(&ctx->dangKy, "maVB", maVB);            // 1-N: DangKy.maVB == VanBan.maVB
+    Phong* p = ctx->phong.findByKey(maPHG);              // N-1
+    if (p != NULL)
+    {
+        phong.set(p);
+        p->vanBans.add(this);                            // chiều ngược lại: Phong.vanBans
+    }
+    // dangKys, phieus được DangKy / PhieuHangDoi tự thêm vào khi chúng liên kết
+}
+
+void VanBan::unlinkRelations()
+{
+    if (phong.hasValue()) phong->vanBans.remove(this);
+    phong.clear();
+
+    for (int i = 0; i < dangKys.count(); i++) dangKys.items()[i]->vanBan.clear();
+    dangKys.clear();
+    for (int i = 0; i < phieus.count(); i++) phieus.items()[i]->vanBan.clear();
+    phieus.clear();
 }

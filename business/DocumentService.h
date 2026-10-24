@@ -11,8 +11,8 @@ private:
 public:
     DocumentService(DbContext& db);
 
-    MyList<Phong> getAllPhong();
-    MyList<VanBan> getVanBanByPhong(const string& maPHG);
+    MyList<Phong*> getAllPhong();
+    MyList<VanBan*> getVanBanByPhong(const string& maPHG);
 };
 
 #endif

@@ -26,9 +26,30 @@ void Phong::fromRow(const Row& r)
     username = r[2];
 }
 
-void Phong::loadRelations(DbContext* ctx)
+void Phong::linkRelations(DbContext* ctx)
 {
-    taiKhoan.load(&ctx->taiKhoan, username);             // 1-1
-    vanBans.load(&ctx->vanBan, "maPHG", maPHG);          // 1-N: VanBan.maPHG == Phong.maPHG
-    quays.load(&ctx->quay, "maPHG", maPHG);              // 1-N: Quay.maPHG == Phong.maPHG
+    TaiKhoan* t = ctx->taiKhoan.findByKey(username);     // 1-1
+    if (t != NULL)
+    {
+        taiKhoan.set(t);
+        t->phong.set(this);                              // chiều ngược lại
+    }
+    // vanBans, quays được VanBan / Quay tự thêm vào khi chúng liên kết
+}
+
+void Phong::unlinkRelations()
+{
+    if (taiKhoan.hasValue()) taiKhoan->phong.clear();
+    taiKhoan.clear();
+
+    // Aggregation: văn bản vẫn tồn tại nhưng không còn thuộc phòng nào
+    for (int i = 0; i < vanBans.count(); i++) vanBans.items()[i]->phong.clear();
+    vanBans.clear();
+}
+
+// Composition: quầy không tồn tại độc lập khỏi phòng
+void Phong::removeChildren(DbContext* ctx)
+{
+    MyList<Quay*> copy = quays.items();
+    for (int i = 0; i < copy.getSize(); i++) ctx->quay.remove(copy[i]->getKey());
 }

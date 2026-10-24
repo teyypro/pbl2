@@ -10,7 +10,7 @@ private:
 
 public:
     AuthService(DbContext& db);
-    bool login(const string& username, const string& password, TaiKhoan& out);
+    TaiKhoan* login(const string& username, const string& password);   // NULL nếu sai
 };
 
 #endif

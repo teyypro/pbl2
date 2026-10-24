@@ -7,7 +7,7 @@ class Counter : public User
 {
 private:
     AppContext& ctx;
-    Quay quay;
+    Quay* quay;                         // quầy của tài khoản (đối tượng trên RAM)
     bool ok;
 
     void hienThiHoSoSV(const string& maSV);
@@ -16,7 +16,7 @@ private:
     void xacNhanTraGiay();
 
 public:
-    Counter(const TaiKhoan& a, AppContext& c);
+    Counter(TaiKhoan* a, AppContext& c);
     void showMenu();
 };
 

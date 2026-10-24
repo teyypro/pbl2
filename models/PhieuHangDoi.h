@@ -19,10 +19,10 @@ private:
     string maVB;                           // yêu cầu: "TUVAN" hoặc mã văn bản cần giải quyết
 
 public:
-    // ----- Navigation Property (N-1) -----
-    Reference<SinhVien> sinhVien;          // phiếu của sinh viên nào
-    Reference<Quay>     quay;              // phiếu thuộc quầy nào
-    Reference<VanBan>   vanBan;            // văn bản cần giải quyết (NULL nếu là tư vấn)
+    // ----- Quan hệ (hai chiều) -----
+    Reference<SinhVien> sinhVien;          // ASSOCIATION: phiếu của sinh viên nào
+    Reference<Quay>     quay;              // COMPOSITION (phía con): phiếu thuộc quầy nào
+    Reference<VanBan>   vanBan;            // ASSOCIATION: văn bản cần giải quyết (NULL nếu là tư vấn)
 
     PhieuHangDoi();
     PhieuHangDoi(const string& maPhieu, int soThuTu, const string& maSV,
@@ -45,7 +45,9 @@ public:
     Row columns() const;
     Row toRow() const;
     void fromRow(const Row& row);
-    void loadRelations(DbContext* ctx);
+    string getKey() const { return maPhieu; }
+    void linkRelations(DbContext* ctx);
+    void unlinkRelations();
 };
 
 #endif

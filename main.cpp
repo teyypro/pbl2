@@ -22,6 +22,9 @@ int main()
         return 1;
     }
 
+    ctx.db.loadAll();       // nạp TOÀN BỘ dữ liệu lên RAM + dựng quan hệ giữa các đối tượng
+    ctx.dash.refresh();     // đồng bộ CurrentServing.txt với trạng thái hàng đợi vừa nạp
+
     MainUI ui(ctx);
     ui.run();
     return 0;

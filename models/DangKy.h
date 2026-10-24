@@ -20,9 +20,9 @@ private:
     string ngayNhan;
 
 public:
-    // ----- Navigation Property (N-1) -----
-    Reference<SinhVien> sinhVien;          // hồ sơ của sinh viên nào
-    Reference<VanBan>   vanBan;            // đăng ký văn bản nào
+    // ----- Quan hệ (hai chiều) -----
+    Reference<SinhVien> sinhVien;          // COMPOSITION (phía con): hồ sơ của sinh viên nào
+    Reference<VanBan>   vanBan;            // ASSOCIATION: đăng ký văn bản nào
 
     DangKy();
     DangKy(const string& maDK, const string& maSV, const string& maVB, const string& trangThai,
@@ -49,7 +49,9 @@ public:
     Row columns() const;
     Row toRow() const;
     void fromRow(const Row& row);
-    void loadRelations(DbContext* ctx);
+    string getKey() const { return maDK; }
+    void linkRelations(DbContext* ctx);
+    void unlinkRelations();
 };
 
 #endif

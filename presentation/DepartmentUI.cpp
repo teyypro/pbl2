@@ -1,17 +1,13 @@
 #include "DepartmentUI.h"
 #include <iostream>
 
-Department::Department(const TaiKhoan& a, AppContext& c) : User(a), ctx(c), ok(false)
+Department::Department(TaiKhoan* a, AppContext& c) : User(a), ctx(c), phong(NULL), ok(false)
 {
-    Phong* p = account.phong.get();                 // Navigation 1-1: TaiKhoan -> Phong
-    if (p != NULL)
-    {
-        phong = *p;
-        ok = true;
-    }
+    phong = account->phong.get();                   // Navigation 1-1: TaiKhoan -> Phong
+    ok = (phong != NULL);
 }
 
-void Department::listWithIndex(MyList<DangKy>& ds)
+void Department::listWithIndex(MyList<DangKy*>& ds)
 {
     for (int i = 0; i < ds.getSize(); i++)
     {
@@ -22,7 +18,7 @@ void Department::listWithIndex(MyList<DangKy>& ds)
 
 void Department::xemChoDuyet()
 {
-    MyList<DangKy> ds = ctx.reg.getPending(phong.getMaPHG());
+    MyList<DangKy*> ds = ctx.reg.getPending(phong->getMaPHG());
     cout << "\n=== HỒ SƠ CHỜ DUYỆT ===\n";
     if (ds.isEmpty()) cout << "Không có hồ sơ nào chờ duyệt.\n";
     listWithIndex(ds);
@@ -32,7 +28,7 @@ void Department::xemChoDuyet()
 // UC03
 void Department::duyetHoSo()
 {
-    MyList<DangKy> ds = ctx.reg.getPending(phong.getMaPHG());
+    MyList<DangKy*> ds = ctx.reg.getPending(phong->getMaPHG());
     cout << "\n=== DUYỆT HỒ SƠ ===\n";
     if (ds.isEmpty()) { cout << "Không có hồ sơ nào chờ duyệt.\n"; pauseScreen(); return; }
     listWithIndex(ds);
@@ -43,26 +39,26 @@ void Department::duyetHoSo()
 
     for (int k = 0; k < sel.getSize(); k++)
     {
-        const DangKy& d = ds[sel[k]];
-        cout << "\n--- Đơn " << d.getMaDK() << " (" << d.tenVanBan()
-             << ", MSSV " << d.getMaSV() << ") ---\n";
+        const DangKy* d = ds[sel[k]];
+        cout << "\n--- Đơn " << d->getMaDK() << " (" << d->tenVanBan()
+             << ", MSSV " << d->getMaSV() << ") ---\n";
         cout << "1. Đồng ý\n2. Từ chối\n";
         int c = readInt("Chọn: ");
 
         string msg;
         if (c == 1)
         {
-            ctx.reg.approve(d.getMaDK(), msg);
+            ctx.reg.approve(d->getMaDK(), msg);
         }
         else if (c == 2)
         {
             string lyDo = readLine("Nhập lý do từ chối: ");
             while (lyDo.empty()) lyDo = readLine("Lý do không được để trống. Nhập lại: ");
-            ctx.reg.reject(d.getMaDK(), lyDo, msg);
+            ctx.reg.reject(d->getMaDK(), lyDo, msg);
         }
         else
         {
-            msg = "Bỏ qua đơn " + d.getMaDK() + ".";
+            msg = "Bỏ qua đơn " + d->getMaDK() + ".";
         }
         cout << msg << endl;
     }
@@ -72,7 +68,7 @@ void Department::duyetHoSo()
 // UC04
 void Department::xuatDanhSachIn()
 {
-    int n = ctx.reg.exportPrintList(phong.getMaPHG());
+    int n = ctx.reg.exportPrintList(phong->getMaPHG());
     if (n < 0) cout << "Không ghi được file PrintList.txt\n";
     else if (n == 0) cout << "Không có hồ sơ nào cần in.\n";
     else cout << "Đã xuất " << n << " hồ sơ ra file PrintList.txt (thư mục data).\n";
@@ -82,8 +78,8 @@ void Department::xuatDanhSachIn()
 // UC05 + UC06: ngày in / ngày nhận = thời điểm bấm cập nhật (không cần nhập)
 void Department::capNhatNgay(bool ngayIn)
 {
-    MyList<DangKy> ds = ngayIn ? ctx.reg.getForPrint(phong.getMaPHG())
-                               : ctx.reg.getForReceive(phong.getMaPHG());
+    MyList<DangKy*> ds = ngayIn ? ctx.reg.getForPrint(phong->getMaPHG())
+                               : ctx.reg.getForReceive(phong->getMaPHG());
     cout << (ngayIn ? "\n=== CẬP NHẬT NGÀY IN ===\n" : "\n=== CẬP NHẬT NGÀY NHẬN ===\n");
     if (ds.isEmpty())
     {
@@ -104,8 +100,8 @@ void Department::capNhatNgay(bool ngayIn)
     for (int k = 0; k < sel.getSize(); k++)
     {
         string msg;
-        if (ngayIn) ctx.reg.setNgayIn(ds[sel[k]].getMaDK(), thoiGian, msg);
-        else ctx.reg.setNgayNhan(ds[sel[k]].getMaDK(), thoiGian, msg);
+        if (ngayIn) ctx.reg.setNgayIn(ds[sel[k]]->getMaDK(), thoiGian, msg);
+        else ctx.reg.setNgayNhan(ds[sel[k]]->getMaDK(), thoiGian, msg);
         cout << msg << endl;
     }
     pauseScreen();
@@ -122,7 +118,7 @@ void Department::showMenu()
     while (true)
     {
         clearScreen();
-        cout << "====== " << phong.getTenPhong() << " ======\n";
+        cout << "====== " << phong->getTenPhong() << " ======\n";
         cout << "1. Xem hồ sơ chờ duyệt\n";
         cout << "2. Duyệt hồ sơ\n";
         cout << "3. Xuất danh sách in\n";

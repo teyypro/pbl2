@@ -6,6 +6,7 @@
 
 class Phong;
 class DangKy;
+class PhieuHangDoi;
 
 class VanBan : public Entity
 {
@@ -15,9 +16,10 @@ private:
     string maPHG;
 
 public:
-    // ----- Navigation Property -----
-    Reference<Phong>   phong;              // N-1: văn bản do phòng nào cấp
-    Collection<DangKy> dangKys;            // 1-N: các hồ sơ đăng ký văn bản này
+    // ----- Quan hệ (hai chiều) -----
+    Reference<Phong>         phong;        // AGGREGATION: văn bản do phòng nào cấp
+    Collection<DangKy>       dangKys;      // ASSOCIATION 1-N: các hồ sơ đăng ký văn bản này
+    Collection<PhieuHangDoi> phieus;       // ASSOCIATION 1-N: các phiếu hàng đợi yêu cầu văn bản này
 
     VanBan();
     VanBan(const string& maVB, const string& tenVB, const string& maPHG);
@@ -31,7 +33,9 @@ public:
     Row columns() const;
     Row toRow() const;
     void fromRow(const Row& row);
-    void loadRelations(DbContext* ctx);
+    string getKey() const { return maVB; }
+    void linkRelations(DbContext* ctx);
+    void unlinkRelations();
 };
 
 #endif

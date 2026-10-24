@@ -12,6 +12,7 @@
 #include "../models/PhieuHangDoi.h"
 
 // Gom toàn bộ các bảng của hệ thống. Tầng Business chỉ làm việc với lớp này.
+// Toàn bộ dữ liệu nằm trên RAM sau khi gọi loadAll().
 class DbContext
 {
 private:
@@ -27,6 +28,9 @@ public:
     DbSet<PhieuHangDoi> phieu;
 
     DbContext(const string& folder);
+
+    // Nạp TẤT CẢ bảng lên RAM rồi dựng quan hệ giữa các đối tượng. Gọi một lần lúc khởi động.
+    void loadAll();
 
     // Không cho sao chép (các DbSet giữ con trỏ tới database_ và DbContext)
     DbContext(const DbContext&) = delete;

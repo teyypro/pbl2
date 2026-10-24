@@ -16,7 +16,8 @@ private:
     string role;
 
 public:
-    // ----- Navigation Property (1-1, chiều ngược): tài khoản này thuộc về ai? -----
+    // ----- ASSOCIATION 1-1 (chiều ngược): tài khoản này thuộc về ai? -----
+    // Được SinhVien / Phong / Quay gán khi chúng liên kết tới tài khoản
     Reference<SinhVien> sinhVien;
     Reference<Phong>    phong;
     Reference<Quay>     quay;
@@ -33,7 +34,8 @@ public:
     Row columns() const;
     Row toRow() const;
     void fromRow(const Row& row);
-    void loadRelations(DbContext* ctx);
+    string getKey() const { return username; }
+    void unlinkRelations();
 };
 
 #endif

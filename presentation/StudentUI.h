@@ -13,7 +13,7 @@ private:
     void xemHoSo();
 
 public:
-    Student(const TaiKhoan& a, AppContext& c);
+    Student(TaiKhoan* a, AppContext& c);
     void showMenu();
 };
 

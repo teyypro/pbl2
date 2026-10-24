@@ -2,12 +2,10 @@
 
 AuthService::AuthService(DbContext& d) : db(d) {}
 
-// TaiKhoan trả về đã được nạp sẵn navigation (sinhVien / phong / quay)
-bool AuthService::login(const string& username, const string& password, TaiKhoan& out)
+// Trả về tài khoản trên RAM; từ đó đi tiếp qua navigation (sinhVien / phong / quay)
+TaiKhoan* AuthService::login(const string& username, const string& password)
 {
-    TaiKhoan t;
-    if (!db.taiKhoan.findByKey(username, t)) return false;   // username là khóa chính
-    if (t.getPassword() != password) return false;
-    out = t;
-    return true;
+    TaiKhoan* t = db.taiKhoan.findByKey(username);       // username là khóa chính
+    if (t == NULL || t->getPassword() != password) return NULL;
+    return t;
 }

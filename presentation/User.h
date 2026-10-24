@@ -7,15 +7,15 @@
 class User
 {
 protected:
-    TaiKhoan account;       // tài khoản đăng nhập (mang theo các Navigation Property đã nạp)
+    TaiKhoan* account;      // tài khoản đăng nhập (đối tượng trên RAM, đã có sẵn các quan hệ)
 
 public:
-    User(const TaiKhoan& a);
+    User(TaiKhoan* a);
     virtual ~User() {}
     virtual void showMenu() = 0;
 };
 
 // In một hồ sơ đăng ký ra màn hình
-void printDangKy(const DangKy& d);
+void printDangKy(const DangKy* d);
 
 #endif

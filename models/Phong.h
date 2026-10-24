@@ -2,9 +2,7 @@
 #define PHONG_H
 
 #include "Nguoi.h"
-#include "../orm/Navigation.h"
 
-class TaiKhoan;
 class VanBan;
 class Quay;
 
@@ -16,10 +14,10 @@ private:
     string tenPhong;
 
 public:
-    // ----- Navigation Property -----
-    Reference<TaiKhoan> taiKhoan;          // 1-1
-    Collection<VanBan>  vanBans;           // 1-N: các văn bản phòng cấp
-    Collection<Quay>    quays;             // 1-N: các quầy thuộc phòng
+    // ----- Quan hệ (hai chiều) -----
+    // (taiKhoan: ASSOCIATION 1-1, kế thừa từ Nguoi)
+    Collection<VanBan> vanBans;            // AGGREGATION 1-N: văn bản phòng cấp (xóa phòng, văn bản vẫn còn)
+    Collection<Quay>   quays;              // COMPOSITION 1-N: quầy thuộc phòng (xóa phòng -> xóa quầy)
 
     Phong();
     Phong(const string& maPHG, const string& tenPhong, const string& username);
@@ -32,7 +30,10 @@ public:
     Row columns() const;
     Row toRow() const;
     void fromRow(const Row& row);
-    void loadRelations(DbContext* ctx);
+    string getKey() const { return maPHG; }
+    void linkRelations(DbContext* ctx);
+    void unlinkRelations();
+    void removeChildren(DbContext* ctx);
 };
 
 typedef Phong NhanVienPhong;

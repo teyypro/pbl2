@@ -13,7 +13,7 @@ string DangKy::tenVanBan() const
 {
     VanBan* vb = vanBan.get();
     if (vb != NULL) return vb->getTenVB();
-    return maVB;                                         // chưa nạp quan hệ hoặc không tìm thấy
+    return maVB;                                         // không tìm thấy văn bản
 }
 
 string DangKy::tableName() const { return "DangKy"; }
@@ -49,8 +49,27 @@ void DangKy::fromRow(const Row& r)
     ngayNhan = r[7];
 }
 
-void DangKy::loadRelations(DbContext* ctx)
+void DangKy::linkRelations(DbContext* ctx)
 {
-    sinhVien.load(&ctx->sinhVien, maSV);                 // N-1: DangKy.maSV -> SinhVien
-    vanBan.load(&ctx->vanBan, maVB);                     // N-1: DangKy.maVB -> VanBan
+    SinhVien* sv = ctx->sinhVien.findByKey(maSV);        // N-1
+    if (sv != NULL)
+    {
+        sinhVien.set(sv);
+        sv->dangKys.add(this);                           // chiều ngược lại: SinhVien.dangKys
+    }
+
+    VanBan* vb = ctx->vanBan.findByKey(maVB);            // N-1
+    if (vb != NULL)
+    {
+        vanBan.set(vb);
+        vb->dangKys.add(this);                           // chiều ngược lại: VanBan.dangKys
+    }
+}
+
+void DangKy::unlinkRelations()
+{
+    if (sinhVien.hasValue()) sinhVien->dangKys.remove(this);
+    if (vanBan.hasValue())   vanBan->dangKys.remove(this);
+    sinhVien.clear();
+    vanBan.clear();
 }

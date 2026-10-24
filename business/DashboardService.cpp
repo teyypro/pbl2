@@ -4,43 +4,26 @@ DashboardService::DashboardService(DbContext& d) : db(d) {}
 
 void DashboardService::refresh()
 {
-    MyList<Quay> quays = db.quay.findAll();
+    const MyList<Quay*>& quays = db.quay.all();
 
     MyList<string> lines;
     for (int i = 0; i < quays.getSize(); i++)
     {
-        string so = "---";
-        int waiting = 0;
-        string dsCho;                                   // "A001,A002,..."
+        Quay* q = quays[i];
 
-        const MyList<PhieuHangDoi>& tickets = quays[i].phieus.items();
+        PhieuHangDoi* serving = q->servingTicket();             // phiếu đang phục vụ
+        string so = (serving != NULL) ? serving->getDisplay() : string("---");
 
-        // Gom các phiếu WAITING rồi sắp xếp tăng dần theo số thứ tự
-        // (thứ tự gọi thực tế là theo số thứ tự, không phải thứ tự dòng trong file)
-        MyList<PhieuHangDoi> cho;
-        for (int j = 0; j < tickets.getSize(); j++)
-        {
-            if (tickets[j].getTrangThai() == Q_SERVING) so = tickets[j].getDisplay();
-            if (tickets[j].getTrangThai() == Q_WAITING) cho.add(tickets[j]);
-        }
-
-        // sắp xếp nổi bọt theo soThuTu
-        for (int a = 0; a < cho.getSize(); a++)
-            for (int b = a + 1; b < cho.getSize(); b++)
-                if (cho[b].getSoThuTu() < cho[a].getSoThuTu())
-                {
-                    PhieuHangDoi tmp = cho[a]; cho[a] = cho[b]; cho[b] = tmp;
-                }
-
+        MyList<PhieuHangDoi*> cho = q->waitingTickets();        // đã sắp theo số thứ tự
+        string dsCho;                                           // "A001,A002,..."
         for (int j = 0; j < cho.getSize(); j++)
         {
             if (j > 0) dsCho += ",";
-            dsCho += cho[j].getDisplay();
+            dsCho += cho[j]->getDisplay();
         }
-        waiting = cho.getSize();
 
-        lines.add(quays[i].getMaQuay() + "|" + so + "|" +
-                  (quays[i].isActive() ? "1" : "0") + "|" + to_string(waiting) + "|" + dsCho);
+        lines.add(q->getMaQuay() + "|" + so + "|" +
+                  (q->isActive() ? "1" : "0") + "|" + to_string(cho.getSize()) + "|" + dsCho);
     }
     db.database().writeLines("CurrentServing.txt", lines);
 }
